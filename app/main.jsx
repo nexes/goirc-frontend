@@ -1,28 +1,26 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {ChannelTab} from './component/channeltab';
-import {ChatInput} from './component/chatinput';
-import {ChatOutput} from './component/chatoutput';
-import {NickList} from './component/nicklist';
+import {Router, Route, browserHistory} from 'react-router';
+import {Login} from './component/login';
+import {App} from './component/app';
+
 
 const elem = document.getElementById('app');
 
 
-class App extends React.Component {
+class Main extends React.Component {
     constructor(props) {
         super(props);
     }
 
     render() {
         return (
-            <div>
-                <ChannelTab />
-                <ChatInput />
-                <NickList />
-                <ChatInput />
-            </div>
+            <Router history={browserHistory} >
+                <Route path="/" component={Login}/>
+                <Route path="/irc" component={App}/>
+            </Router>
         );
     }
 }
 
-ReactDOM.render(<App />, elem);
+ReactDOM.render(<Main />, elem);
