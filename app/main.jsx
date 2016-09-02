@@ -4,9 +4,7 @@ import {Router, Route, browserHistory} from 'react-router';
 import {Login} from './component/login';
 import {App} from './component/app';
 
-
 const elem = document.getElementById('app');
-
 
 class Main extends React.Component {
     constructor(props) {
@@ -15,7 +13,7 @@ class Main extends React.Component {
 
     render() {
         return (
-            <Router history={browserHistory} >
+            <Router history={browserHistory}>
                 <Route path="/" component={Login}/>
                 <Route path="/irc" component={App}/>
             </Router>

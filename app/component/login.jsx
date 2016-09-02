@@ -1,5 +1,6 @@
 import React from 'react';
 import {browserHistory} from 'react-router';
+import {OpenConnection} from '../irccommand';
 
 
 export class Login extends React.Component {
@@ -29,9 +30,16 @@ export class Login extends React.Component {
     }
 
     connectToIRC(e) {
-        console.log(this.state);
-        browserHistory.push('/irc');
+        if (this.state.nick.length === 0) {
+            console.log('we should make a popup error');
+        }
 
+        if (this.state.server.length === 0) {
+            console.log('we should make a popup error');
+        }
+
+        OpenConnection(this.state.nick, this.state.server, this.state.pass);
+        browserHistory.push('/irc');
     }
 
     render() {
@@ -64,8 +72,10 @@ export class Login extends React.Component {
                             onChange={this.updateInput}
                             placeholder="Server  e.g irc.freenode.net"/>
                     </div>
-                    <button type="button" className="btn btn-block btn-success" onClick={this.connectToIRC}>Connect</button>
-
+                    <button
+                        type="button"
+                        className="btn btn-block btn-success"
+                        onClick={this.connectToIRC}>Connect</button>
                 </div>
 
                 <Footer />
