@@ -1,12 +1,13 @@
 import React from 'react';
 import {browserHistory} from 'react-router';
-import {OpenConnection} from '../irccommand';
+import {IRC} from '../irccommand';
 
 
 export class Login extends React.Component {
     constructor(props) {
         super(props);
 
+        this.irc = new IRC();
         this.state = {
             nick: '',
             pass: '',
@@ -38,7 +39,7 @@ export class Login extends React.Component {
             console.log('we should make a popup error');
         }
 
-        OpenConnection(this.state.nick, this.state.server, this.state.pass);
+        this.irc.sendLoginInfo(this.state.nick, this.state.server, this.state.pass);
         browserHistory.push('/irc');
     }
 
