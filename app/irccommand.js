@@ -1,42 +1,70 @@
 //this will be the communication point to the server
 
-export function OpenConnection(nick, server, pass = 'none') {
-    let payload = {
-        nick: nick,
-        server: server,
-        pass: pass
-    };
+export class IRC {
+    constructor() {
+        this.ws = undefined;
+    }
 
-    if (window.fetch) {
-        fetch('/api/irc/connect', {
-            method: 'POST',
-            body: JSON.stringify(payload)
+    sendLoginInfo(nick, server, pass = 'none') {
+        let payload = {
+            nick: nick,
+            server: server,
+            pass: pass
+        };
 
-        }).then(function(response) {
-            if (response.ok) {
-                return response.text(); //change to json when server is working
-            }
+        if (window.fetch) {
+            fetch('/api/irc/connect', {
+                method: 'POST',
+                body: JSON.stringify(payload)
 
-        }).then (function(json) {
-            console.log(json);
-        });
+            }).then((response) => {
+                if (response.ok) {
+                    //change to json when server is working
+                    return response.text(); 
+                }
 
-    } else {
-        let req = new XMLHttpRequest();
+            }).then ((json) => {
+                //let res = JSON.parse(json);
+                //check resonse for OK
+                console.log(json);
+                this.openConnection();
+            });
 
-        req.addEventListener('load', (e) => {
-            //handle success
-            console.log('from XMLHttpRequest load');
-            console.log(e.target.response);
-        });
+        } else {
+            let req = new XMLHttpRequest();
 
-        req.addEventListener('error', (e) => {
-            //handle errors
-            console.log('from XMLHttpRequest error');
-            console.log(e);
-        });
+            req.addEventListener('load', (e) => {
+                //handle success
+                this.openConnection();
+                console.log('from XMLHttpRequest load');
+                console.log(e.target.response);
+            });
 
-        req.open('POST', '/api/irc/connect');
-        req.send(JSON.stringify(payload));
+            req.addEventListener('error', (e) => {
+                //handle errors
+                console.log('from XMLHttpRequest error');
+                console.log(e);
+            });
+
+            req.open('POST', '/api/irc/connect');
+            req.send(JSON.stringify(payload));
+        }
+    }
+
+    socketOpen(event) {
+        console.log('socketOpen ', event.data);
+    }
+
+    socketMessage(event) {
+        console.log('socketMessage ', event.data);
+    }
+
+    openConnection() {
+        if (this.ws === undefined) {
+             this.ws = new WebSocket('ws://localhost:8080/api/irc/connect');
+        }
+        console.log(this.ws);
+        this.ws.onopen = this.socketOpen;
+        this.ws.onmessage = this.socketMessage;
     }
 }

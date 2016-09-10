@@ -24,13 +24,18 @@ type clientInfo struct {
 
 func (i *ircHandler) ircResponses() {
 	i.irc.Listen()
+	defer i.irc.CloseConnection("bye goirc")
+	defer i.conn.Close()
 
 	for i.irc.IsOpen() {
-		fmt.Println("waiting in ircResponse")
 		select {
 		case fromSrv := <-i.irc.RecvServerMessage():
 			//send over websocket
 			fmt.Println(fromSrv["MSG"])
+			err := i.conn.WriteMessage(websocket.TextMessage, []byte(fromSrv["MSG"]))
+			if err != nil {
+				fmt.Printf("error sending over websocket %s", err.Error())
+			}
 		}
 	}
 }
@@ -77,6 +82,9 @@ func (i *ircHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		if i.open {
 			conn, err := upgrader.Upgrade(res, req, nil)
 			if err != nil {
+				res.Header().Set("Content-Type", "application/json")
+				res.Write([]byte("{'response': 'error with upgrade'}"))
+
 				fmt.Printf("error with server ws %s", err.Error())
 				return
 			}
