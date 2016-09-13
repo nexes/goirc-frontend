@@ -15,18 +15,21 @@ export class IRC {
         if (window.fetch) {
             fetch('/api/irc/connect', {
                 method: 'POST',
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                headers: new Headers({
+                    'Content-Type': 'application/json'
+                })
 
             }).then((response) => {
                 if (response.ok) {
                     //change to json when server is working
-                    return response.text(); 
+                    return response.text();
                 }
 
             }).then ((json) => {
-                //let res = JSON.parse(json);
-                //check resonse for OK
+                let res = JSON.parse(json);
                 console.log(json);
+                console.log(res.response);
                 this.openConnection();
             });
 
@@ -56,15 +59,18 @@ export class IRC {
     }
 
     socketMessage(event) {
-        console.log('socketMessage ', event.data);
+        let data = JSON.parse(event.data);
+        console.log('socketMessage ', data.MSG);
     }
 
     openConnection() {
         if (this.ws === undefined) {
              this.ws = new WebSocket('ws://localhost:8080/api/irc/connect');
         }
-        console.log(this.ws);
         this.ws.onopen = this.socketOpen;
         this.ws.onmessage = this.socketMessage;
+    }
+
+    sendCommand(cmd) {
     }
 }

@@ -16,12 +16,20 @@ type ircHandler struct {
 	irc  goirc.Client
 }
 
+//holds client data for IRC, received from the POST request
 type clientInfo struct {
 	ServerName string `json:"server"`
 	Nick       string `json:"nick"`
 	Pass       string `json:"pass,omitempty"`
 }
 
+//json struct that will be sent in responses
+type responseData struct {
+	response string
+	status   int
+}
+
+//this will receive irc data from goirc and send it up through a websocket
 func (i *ircHandler) ircResponses() {
 	i.irc.Listen()
 	defer i.irc.CloseConnection("bye goirc")
@@ -30,9 +38,7 @@ func (i *ircHandler) ircResponses() {
 	for i.irc.IsOpen() {
 		select {
 		case fromSrv := <-i.irc.RecvServerMessage():
-			//send over websocket
-			fmt.Println(fromSrv["MSG"])
-			err := i.conn.WriteMessage(websocket.TextMessage, []byte(fromSrv["MSG"]))
+			err := i.conn.WriteJSON(fromSrv)
 			if err != nil {
 				fmt.Printf("error sending over websocket %s", err.Error())
 			}
@@ -40,17 +46,20 @@ func (i *ircHandler) ircResponses() {
 	}
 }
 
+//handle POST and GET. POST will have the users nick, password and server name, this needs
+//to bee called before GET request. GET will upgrade from the HTTP protocol to the ws protocol
 func (i *ircHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	switch req.Method {
+	encdr := json.NewEncoder(res)
+	res.Header().Set("Content-Type", "application/json")
 
+	switch req.Method {
 	case http.MethodPost:
 		var info clientInfo
 		dec := json.NewDecoder(req.Body)
 		dec.Decode(&info)
 
 		if i.open {
-			res.Header().Set("Content-Type", "application/json")
-			res.Write([]byte("{response: 'connection already open'}"))
+			encdr.Encode(responseData{response: "connection already open", status: 500})
 			return
 		}
 
@@ -60,17 +69,14 @@ func (i *ircHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			Password: info.Pass,
 		}
 
-		//TDOD these resp should be json not text
 		err := i.irc.ConnectToServer()
 		if err != nil {
 			fmt.Println(err.Error())
-			res.Header().Set("Content-Type", "application/json")
-			res.Write([]byte("{'response': 'error man'}"))
+			encdr.Encode(responseData{response: "Error connectingto IRC", status: 500})
 
 		} else {
 			i.open = true
-			res.Header().Set("Content-Type", "application/json")
-			res.Write([]byte("{'response': 'good to go man'}"))
+			encdr.Encode(responseData{response: "IRC connection open", status: 200})
 		}
 
 	case http.MethodGet:
@@ -82,20 +88,16 @@ func (i *ircHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		if i.open {
 			conn, err := upgrader.Upgrade(res, req, nil)
 			if err != nil {
-				res.Header().Set("Content-Type", "application/json")
-				res.Write([]byte("{'response': 'error with upgrade'}"))
-
 				fmt.Printf("error with server ws %s", err.Error())
+				encdr.Encode(responseData{response: "Error upgrading to ws protocol", status: 500})
 				return
 			}
 			i.conn = conn
 			go i.ircResponses()
+			encdr.Encode(responseData{response: "listening", status: 200})
 
-			res.Header().Set("Content-Type", "application/json")
-			res.Write([]byte("{'response': 'listening'}"))
 		} else {
-			res.Header().Set("Content-Type", "application/json")
-			res.Write([]byte("{'response': 'send POST request first"))
+			encdr.Encode(responseData{response: "send POST request first", status: 500})
 		}
 
 	default:

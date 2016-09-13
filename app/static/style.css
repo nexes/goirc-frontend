@@ -11,3 +11,8 @@ html body {
     bottom: 0px;
     right: 40%;
 }
+
+.channel-tab {
+    width: 100%;
+    background: #330000;
+}
