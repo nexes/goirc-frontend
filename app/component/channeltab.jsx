@@ -8,7 +8,17 @@ export class ChannelTab extends React.Component {
 
     render() {
         return (
-            <h1>ChannelTab</h1>
+            <div className="channel-tab">
+                <ul>
+                    <li className="active"><a href="#">Server</a></li>
+                    <li><a href="#">#programming</a></li>
+                    <li><a href="#">#go-nuts</a></li>
+                    <li><a href="#">#go-nuts</a></li>
+                </ul>
+                <div className="tag">
+                    <span>goIRC</span>
+                </div>
+            </div>
         );
     }
 }

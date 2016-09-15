@@ -7,7 +7,16 @@ export class ChatOutput extends React.Component {
 
     render() {
         return (
-            <h1>ChatOutput</h1>
+            <div className="chat-output">
+                <div className="msg">
+                    <div className="nick">nexes</div>
+                    <div className="message">hey hello world</div>
+                </div>
+                <div className="msg">
+                    <div className="nick">Dave</div>
+                    <div className="message">hey nexes, what is the ups</div>
+                </div>
+            </div>
         );
     }
 }
