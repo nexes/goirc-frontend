@@ -5,7 +5,7 @@ export class IRC {
         this.ws = undefined;
     }
 
-    sendLoginInfo(nick, server, pass = 'none') {
+    sendLoginInfo(nick, server, pass = '') {
         let payload = {
             nick: nick,
             server: server,
@@ -13,24 +13,12 @@ export class IRC {
         };
 
         if (window.fetch) {
-            fetch('/api/irc/connect', {
+            return fetch('/api/irc/connect', {
                 method: 'POST',
                 body: JSON.stringify(payload),
                 headers: new Headers({
                     'Content-Type': 'application/json'
                 })
-
-            }).then((response) => {
-                if (response.ok) {
-                    //change to json when server is working
-                    return response.text();
-                }
-
-            }).then ((json) => {
-                let res = JSON.parse(json);
-                console.log(json);
-                console.log(res.response);
-                this.openConnection();
             });
 
         } else {
@@ -39,14 +27,12 @@ export class IRC {
             req.addEventListener('load', (e) => {
                 //handle success
                 this.openConnection();
-                console.log('from XMLHttpRequest load');
-                console.log(e.target.response);
+                console.log('from XMLHttpRequest load', e.target.response);
             });
 
             req.addEventListener('error', (e) => {
                 //handle errors
-                console.log('from XMLHttpRequest error');
-                console.log(e);
+                console.log('from XMLHttpRequest error', e.target.response);
             });
 
             req.open('POST', '/api/irc/connect');
@@ -55,20 +41,21 @@ export class IRC {
     }
 
     socketOpen(event) {
-        console.log('socketOpen ', event.data);
+        console.log('socketOpen ', event);
     }
 
-    socketMessage(event) {
-        let data = JSON.parse(event.data);
-        console.log('socketMessage ', data.MSG);
+    //fnc is a function to be called when the websocket receives a message event
+    //void func(event)
+    setSocketMessageEvent(fnc) {
+        this.ws.onmessage = fnc;
     }
 
     openConnection() {
         if (this.ws === undefined) {
-             this.ws = new WebSocket('ws://localhost:8080/api/irc/connect');
+            this.ws = new WebSocket('ws://localhost:8080/api/irc/connect');
         }
         this.ws.onopen = this.socketOpen;
-        this.ws.onmessage = this.socketMessage;
+
     }
 
     sendCommand(cmd) {

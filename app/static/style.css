@@ -64,11 +64,12 @@ html body {
 /*Chat Output Begin*/
 .chat-output {
     position: fixed;
-    overflow: auto;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
     width: 100%;
     top: 40px;
     bottom: 60px;
-    background-color: #44ee90;
 }
 
 .chat-output .msg {
@@ -85,7 +86,7 @@ html body {
 }
 
 .msg .message {
-    padding-left: 60px;
+    padding-left: 10px;
     color: red;
 }
 /*Chat Output End*/
