@@ -1,19 +1,17 @@
 import React from 'react';
-import {browserHistory} from 'react-router';
-import {IRC} from '../irccommand';
 
 
 export class Login extends React.Component {
     constructor(props) {
         super(props);
 
-        this.irc = new IRC();
         this.state = {
             nick: '',
             pass: '',
             server: ''
         };
-
+        this.sendLogin = this.props.route.loginfunc;
+        
         this.connectToIRC = this.connectToIRC.bind(this);
         this.updateInput = this.updateInput.bind(this);
     }
@@ -33,14 +31,15 @@ export class Login extends React.Component {
     connectToIRC(e) {
         if (this.state.nick.length === 0) {
             console.log('we should make a popup error');
+            return;
         }
 
         if (this.state.server.length === 0) {
             console.log('we should make a popup error');
+            return;
         }
 
-        this.irc.sendLoginInfo(this.state.nick, this.state.server, this.state.pass);
-        browserHistory.push('/irc');
+        this.sendLogin(this.state.nick, this.state.server, this.state.pass);
     }
 
     render() {
