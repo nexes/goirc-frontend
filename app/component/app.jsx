@@ -21,16 +21,16 @@ export class App extends React.Component {
         };
         this.irc = this.props.route.irc;
         this.ircMessageUpdate = this.ircMessageUpdate.bind(this);
-        this.sendUserInput = this.sendUserInput.bind(this);
     }
 
     componentDidMount() {
-        console.log('componentDidMount called');
+        //setup the websocket onmessage event, needs to wait after the component loads
         this.irc.setSocketMessageEvent(this.ircMessageUpdate);
     }
 
     ircMessageUpdate(event) {
         let ji = JSON.parse(event.data);
+        //needs to be better/done right
         let msg = {
             channel: ji.Channel || 'Server',
             nick: ji.Nick || '',
@@ -41,16 +41,12 @@ export class App extends React.Component {
         this.setState({messages: this.state.messages.concat(msg)});
     }
 
-    sendUserInput(event) {
-        console.log('userInput ', event)
-    }
-
     render() {
         return (
             <div>
                 <ChannelTab channels={this.state.channels}/>
                 <ChatOutput messages={this.state.messages}/>
-                <ChatInput sendInput={this.sendUserInput}/>
+                <ChatInput sendInput={this.irc.sendCommand}/>
                 <NickList />
             </div>
         );
