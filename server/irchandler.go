@@ -42,6 +42,18 @@ func (i *ircHandler) ircResponses() {
 			if err != nil {
 				fmt.Printf("error sending over websocket %s", err.Error())
 			}
+
+		case fromChannel := <-i.irc.RecvChannelMessage():
+			err := i.conn.WriteJSON(fromChannel)
+			if err != nil {
+				fmt.Printf("error sending over websocket %s", err.Error())
+			}
+
+		case fromMsg := <-i.irc.RecvPrivMessage():
+			err := i.conn.WriteJSON(fromMsg)
+			if err != nil {
+				fmt.Printf("error sending over websocket %s", err.Error())
+			}
 		}
 	}
 }
@@ -49,8 +61,8 @@ func (i *ircHandler) ircResponses() {
 //handle POST and GET. POST will have the users nick, password and server name, this needs
 //to bee called before GET request. GET will upgrade from the HTTP protocol to the ws protocol
 func (i *ircHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	encdr := json.NewEncoder(res)
 	res.Header().Set("Content-Type", "application/json")
+	encdr := json.NewEncoder(res)
 
 	switch req.Method {
 	case http.MethodPost:
@@ -58,6 +70,7 @@ func (i *ircHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		dec := json.NewDecoder(req.Body)
 		dec.Decode(&info)
 
+		//do i need this
 		if i.open {
 			encdr.Encode(responseData{response: "connection already open", status: 500})
 			return
@@ -76,6 +89,7 @@ func (i *ircHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 
 		} else {
 			i.open = true
+			fmt.Println("sending OK status")
 			encdr.Encode(responseData{response: "IRC connection open", status: 200})
 		}
 
@@ -93,6 +107,7 @@ func (i *ircHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 				return
 			}
 			i.conn = conn
+
 			go i.ircResponses()
 			encdr.Encode(responseData{response: "listening", status: 200})
 
