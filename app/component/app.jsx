@@ -10,17 +10,18 @@ export class App extends React.Component {
         super(props);
 
         this.state = {
-            //array of objects representing irc messages
             messages: [{
                 channel: '',
                 nick: '',
-                msg: ''
+                message: ''
             }],
-            //array of channel names: string
-            channels: []
+
+            channels: [],
+            userInput: ''
         };
         this.irc = this.props.route.irc;
         this.ircMessageUpdate = this.ircMessageUpdate.bind(this);
+        this.sendUserInput = this.sendUserInput.bind(this);
     }
 
     componentDidMount() {
@@ -34,11 +35,14 @@ export class App extends React.Component {
         let msg = {
             channel: ji.Channel || 'Server',
             nick: ji.Nick || '',
-            msg: ji.MSG || ji.MOTD || 'what'
+            message: ji.MSG || ji.MOTD || 'what'
         };
 
-        //dont need to render an array everytime, just one message elem ???
         this.setState({messages: this.state.messages.concat(msg)});
+    }
+
+    sendUserInput(command) {
+        this.irc.sendCommand(command);
     }
 
     render() {
@@ -46,7 +50,7 @@ export class App extends React.Component {
             <div>
                 <ChannelTab channels={this.state.channels}/>
                 <ChatOutput messages={this.state.messages}/>
-                <ChatInput sendInput={this.irc.sendCommand}/>
+                <ChatInput inputData={this.state.userInput} inputSubmit={this.sendUserInput}/>
                 <NickList />
             </div>
         );
