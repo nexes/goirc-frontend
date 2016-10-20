@@ -13,30 +13,42 @@ export class IRC {
         };
 
         if (window.fetch) {
-            return fetch('/api/irc/connect', {
-                method: 'POST',
-                body: JSON.stringify(payload),
-                headers: new Headers({
-                    'Content-Type': 'application/json'
-                })
+            return new Promise(function(resolve, reject) {
+                fetch('/api/irc/connect', {
+                    method: 'POST',
+                    body: JSON.stringify(paylod),
+                    headers: new Headers({
+                        'Content-Type': 'application/json'
+                    })
+                }).then((res) => {
+                    if (res.ok) {
+                       res.text().then((data) => {
+                            resolve(data);
+                       });
+                    } else {
+                        reject(res.statusText);
+                    }
+                }).catch((error) => {
+                    reject(error.message);
+                });
             });
 
         } else {
-            let req = new XMLHttpRequest();
+            return new Promise(function(resolve, reject) {
+                let req = new XMLHttpRequest();
 
-            req.addEventListener('load', (e) => {
-                //handle success
-                this.openConnection();
-                console.log('from XMLHttpRequest load', e.target.response);
+                req.addEventListener('load', (e) => {
+                    console.log('from xmlhttp response ', e.target.response);
+                    resolve(e.target.response);
+                });
+                req.addEventListener('error', (e) => {
+                    console.log('from xmlhttp error, ', e.target.response);
+                    reject(e.target.response);
+                });
+
+                req.open('POST', '/api/irc/connect');
+                req.send(JSON.stringify(payload));
             });
-
-            req.addEventListener('error', (e) => {
-                //handle errors
-                console.log('from XMLHttpRequest error', e.target.response);
-            });
-
-            req.open('POST', '/api/irc/connect');
-            req.send(JSON.stringify(payload));
         }
     }
 
@@ -47,7 +59,9 @@ export class IRC {
     //fnc is a function to be called when the websocket receives a message event
     //void func(event)
     setSocketMessageEvent(fnc) {
-        this.ws.onmessage = fnc;
+        if (this.ws !== undefined && typeof fnc === 'function') {
+            this.ws.onmessage = fnc;
+        }
     }
 
     openConnection() {
@@ -55,9 +69,9 @@ export class IRC {
             this.ws = new WebSocket('ws://localhost:8080/api/irc/connect');
         }
         this.ws.onopen = this.socketOpen;
-
     }
 
-    sendCommand(cmd) {
+    sendCommand(command) {
+        this.ws.send(command);
     }
 }

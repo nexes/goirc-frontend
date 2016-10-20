@@ -13,21 +13,17 @@ class Main extends React.Component {
         super(props);
 
         this.sendLoginData = this.sendLoginData.bind(this);
-        this.ws = new IRC();
+        this.irc = new IRC();
     }
 
     sendLoginData(nick, server, pass = '') {
-        this.ws.sendLoginInfo(nick, server, pass)
+        this.irc.sendLoginInfo(nick, server, pass)
             .then((res) => {
-                if (res.ok) {
-                    //this will be .json soon
-                    res.text().then((data) => {
-                        this.ws.openConnection();
-                        browserHistory.push('/irc');
-                    });
-                } else {
-                    console.log('error with fetch respons');
-                }
+                this.irc.openConnection();
+                browserHistory.push('/irc');
+            })
+            .catch((res) => {
+                console.log('error from sendLoginData ', res);
             });
     }
 
@@ -35,10 +31,11 @@ class Main extends React.Component {
         return (
             <Router history={browserHistory}>
                 <Route path="/" component={Login} loginfunc={this.sendLoginData}/>
-                <Route path="/irc" component={App} irc={this.ws}/>
+                <Route path="/irc" component={App} irc={this.irc}/>
             </Router>
         );
     }
 }
 
 ReactDOM.render(<Main />, elem);
+
