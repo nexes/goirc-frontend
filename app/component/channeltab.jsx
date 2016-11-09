@@ -4,16 +4,29 @@ import React from 'react';
 export class ChannelTab extends React.Component {
     constructor(props) {
         super(props);
+
+        this.channels = [];
+        this.tabClick = this.tabClick.bind(this);
+    }
+
+    tabClick(e) {
+        console.log(e);
+    }
+
+    shouldComponentUpdate(nextprops, nextstate) {
+        return nextprops.channels.length !== this.channels.length;
     }
 
     render() {
+        let list = this.props.channels.map((value, index) => {
+            this.channels[index] = value;
+            return <li key={index} onClick={this.tabClick}><a href="#">#{value}</a></li>;
+        });
+
         return (
             <div className="channel-tab">
                 <ul>
-                    <li className="active"><a href="#">Server</a></li>
-                    <li><a href="#">#programming</a></li>
-                    <li><a href="#">#go-nuts</a></li>
-                    <li><a href="#">#go-nuts</a></li>
+                    {list}
                 </ul>
                 <div className="tag">
                     <span>goIRC</span>
