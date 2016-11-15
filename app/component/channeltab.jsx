@@ -10,7 +10,10 @@ export class ChannelTab extends React.Component {
     }
 
     tabClick(e) {
-        console.log(e);
+        let name = e.target.innerText;
+
+        if (name !== '')
+            this.props.updateChannel(name);
     }
 
     shouldComponentUpdate(nextprops, nextstate) {
@@ -20,7 +23,7 @@ export class ChannelTab extends React.Component {
     render() {
         let list = this.props.channels.map((value, index) => {
             this.channels[index] = value;
-            return <li key={index} onClick={this.tabClick}><a href="#">#{value}</a></li>;
+            return <li key={index} onClick={this.tabClick}><a href="#">{value}</a></li>;
         });
 
         return (

@@ -24,6 +24,7 @@ export class App extends React.Component {
         this.ircMessageUpdate = this.ircMessageUpdate.bind(this);
         this.sendUserInput = this.sendUserInput.bind(this);
         this.updateChannels = this.updateChannels.bind(this);
+        this.updateActiveChannel = this.updateActiveChannel.bind(this);
     }
 
     componentDidMount() {
@@ -48,8 +49,14 @@ export class App extends React.Component {
                 return;
 
             newChannels.slice(index, 1);
+            //update active channel
             this.setState({channels: newChannels});
         }
+    }
+
+    updateActiveChannel(channelName) {
+        if (this.state.activeChannel !== channelName)
+            this.setState({activeChannel: channelName});
     }
 
     ircMessageUpdate(event) {
@@ -91,7 +98,7 @@ export class App extends React.Component {
     render() {
         return (
             <div>
-                <ChannelTab channels={this.state.channels} />
+                <ChannelTab channels={this.state.channels} updateChannel={this.updateActiveChannel}/>
                 <ChatOutput messages={this.state.messages} />
                 <ChatInput inputData={this.state.userInput} inputSubmit={this.sendUserInput} />
                 <NickList />
