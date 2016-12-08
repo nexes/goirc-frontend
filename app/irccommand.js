@@ -16,7 +16,7 @@ export class IRC {
             return new Promise(function(resolve, reject) {
                 fetch('/api/irc/connect', {
                     method: 'POST',
-                    body: JSON.stringify(paylod),
+                    body: JSON.stringify(payload),
                     headers: new Headers({
                         'Content-Type': 'application/json'
                     })
@@ -72,6 +72,6 @@ export class IRC {
     }
 
     sendCommand(command) {
-        this.ws.send(command);
+        this.ws.send(JSON.stringify(command));
     }
 }

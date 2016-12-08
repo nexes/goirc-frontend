@@ -50,29 +50,72 @@ export class App extends React.Component {
 
             newChannels.slice(index, 1);
             //update active channel
-            this.setState({channels: newChannels});
+            this.setState({ channels: newChannels });
         }
     }
 
     updateActiveChannel(channelName) {
         if (this.state.activeChannel !== channelName)
-            this.setState({activeChannel: channelName});
+            this.setState({ activeChannel: channelName });
     }
 
+    //working on this function.
     ircMessageUpdate(event) {
-        let ji = JSON.parse(event.data);
-        //needs to be better/done right
-        let msg = {
-            channel: ji.Channel || 'Server',
-            nick: ji.Nick || '',
-            message: ji.MSG || ji.MOTD || 'what'
-        };
+        let ircMsg = JSON.parse(event.data);
+        let msg = {};
 
-        this.setState({ messages: this.state.messages.concat(msg) });
+        console.log(ircMsg);
+        switch (ircMsg.IDName) {
+            case 'PING':
+                //TODO: send pong response
+                break;
+
+            case 'RPL_MOTD':
+                msg.channel = ircMsg.Host;
+                msg.nick = '';
+                msg.message = ircMsg.MOTD;
+
+                this.setState({ messages: this.state.messages.concat(msg) });
+                break;
+
+            case 'RPL_CHANNELNAME':
+                let newChannels = this.state.channels.slice();
+
+                newChannels.forEach((value, index) => {
+                    if (ircMsg.NewName.includes(value)) {
+                        newChannels.slice(index, 1);
+                        newChannels.push(value);
+
+                        this.setState({
+                            channels: newChannels,
+                            activeChannel: value
+                        });
+                    }
+                });
+                break;
+
+            case 'RPL_NICKJOIN':
+                //TODO: update nick list for the channel given
+                break;
+
+            case 'RPL_NICKQUIT':
+                //TODO: update nick list for the channel given
+                break;
+
+
+            case 'RPL_PRIVMSG':
+                //TODO: make sure messages are shown in the correct room
+                msg.channel = ircMsg.Channel;
+                msg.nick = ircMsg.Nick;
+                msg.message = ircMsg.MSG;
+
+                this.setState({ messages: this.state.messages.concat(msg) });
+                break;
+        }
     }
 
     sendUserInput(input) {
-        if (input !== '') {
+        if (input.length !== 0) {
             let cmdInput = input.trim();
             let cmd = 'write';
             let data = cmdInput;
@@ -89,8 +132,8 @@ export class App extends React.Component {
             //need to get the active channel from channeltab element
             this.irc.sendCommand({
                 command: cmd,
-                info: data,
-                channel: this.activeChannel
+                data: data,
+                channel: this.state.activeChannel
             });
         }
     }
@@ -98,7 +141,7 @@ export class App extends React.Component {
     render() {
         return (
             <div>
-                <ChannelTab channels={this.state.channels} updateChannel={this.updateActiveChannel}/>
+                <ChannelTab channels={this.state.channels} updateChannel={this.updateActiveChannel} />
                 <ChatOutput messages={this.state.messages} />
                 <ChatInput inputData={this.state.userInput} inputSubmit={this.sendUserInput} />
                 <NickList />
