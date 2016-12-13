@@ -7,13 +7,15 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/nexes/goirc"
+	"strings"
 )
 
+//our object that makes a connection to our goirc API and the websocket to communicate over
 type ircHandler struct {
 	open bool
 
-	conn *websocket.Conn
 	irc  goirc.Client
+	conn *websocket.Conn
 }
 
 //holds client data for IRC, received from the POST request
@@ -23,10 +25,17 @@ type clientInfo struct {
 	Pass       string `json:"pass,omitempty"`
 }
 
-//json struct that will be sent in responses
+//json struct that will be sent in responses to the client
 type responseData struct {
 	response string
 	status   int
+}
+
+//json struct that will be received from the client
+type requestData struct {
+	Command string `json:"command"`
+	Data    string `json:"data"`
+	Room    string `json:"channel"`
 }
 
 //this will receive irc data from goirc and send it up through a websocket
@@ -58,8 +67,47 @@ func (i *ircHandler) ircResponses() {
 	}
 }
 
+//ircRequest will handle readng from the websocket
+func (i *ircHandler) ircRequest() {
+	var requestIRC requestData
+	i.conn.SetReadLimit(1024)
+
+	for {
+		_, data, err := i.conn.ReadMessage()
+		if err != nil {
+			fmt.Printf("Server error receiving message: %s", err.Error())
+		}
+		//data is a json string
+		er := json.Unmarshal(data, &requestIRC)
+		if er != nil {
+			fmt.Printf("Error marshaling json request from client: %s", er.Error())
+		}
+
+		//refractor this list of if's else if's
+		if strings.EqualFold(requestIRC.Command, "write") {
+			fmt.Printf("channel = %s, data = %s\n", requestIRC.Room, requestIRC.Data)
+			channel := i.irc.GetChannel(requestIRC.Room)
+
+			if channel != nil {
+				channel.SendMessage(requestIRC.Data)
+			} else {
+				fmt.Println("channel is nil")
+			}
+		} else if strings.EqualFold(requestIRC.Command, "join") {
+			fmt.Printf("requestIRC.Room = %s, requestIRC.Data = %s\n", requestIRC.Room, requestIRC.Data)
+			_, err := i.irc.JoinChannel(requestIRC.Data)
+
+			if err != nil {
+				fmt.Printf("Error joining room %s\n", err.Error())
+			}
+		} else if strings.EqualFold(requestIRC.Command, "pong") {
+			i.irc.SendPongResponse()
+		}
+	}
+}
+
 //handle POST and GET. POST will have the users nick, password and server name, this needs
-//to bee called before GET request. GET will upgrade from the HTTP protocol to the ws protocol
+//to be called before GET request. GET will upgrade from the HTTP protocol to the ws protocol
 func (i *ircHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
 	encdr := json.NewEncoder(res)
@@ -86,12 +134,11 @@ func (i *ircHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			fmt.Println(err.Error())
 			encdr.Encode(responseData{response: "Error connectingto IRC", status: 500})
-
-		} else {
-			i.open = true
-			fmt.Println("sending OK status")
-			encdr.Encode(responseData{response: "IRC connection open", status: 200})
+			return
 		}
+
+		i.open = true
+		encdr.Encode(responseData{response: "IRC connection open", status: 200})
 
 	case http.MethodGet:
 		var upgrader = websocket.Upgrader{
@@ -109,13 +156,15 @@ func (i *ircHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			i.conn = conn
 
 			go i.ircResponses()
+			go i.ircRequest()
 			encdr.Encode(responseData{response: "listening", status: 200})
 
 		} else {
 			encdr.Encode(responseData{response: "send POST request first", status: 500})
+			return
 		}
 
 	default:
-		fmt.Println("nope ")
+		fmt.Println("nope")
 	}
 }

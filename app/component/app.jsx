@@ -21,6 +21,8 @@ export class App extends React.Component {
         };
 
         this.irc = this.props.route.irc;
+
+        //bind class functions to 'this' for es6/react reasons
         this.ircMessageUpdate = this.ircMessageUpdate.bind(this);
         this.sendUserInput = this.sendUserInput.bind(this);
         this.updateChannels = this.updateChannels.bind(this);
@@ -67,7 +69,11 @@ export class App extends React.Component {
         console.log(ircMsg);
         switch (ircMsg.IDName) {
             case 'PING':
-                //TODO: send pong response
+                this.irc.sendCommand({
+                    command: 'pong',
+                    room: '',
+                    data: ''
+                });
                 break;
 
             case 'RPL_MOTD':
@@ -117,6 +123,7 @@ export class App extends React.Component {
     sendUserInput(input) {
         if (input.length !== 0) {
             let cmdInput = input.trim();
+            //default command will be write
             let cmd = 'write';
             let data = cmdInput;
 
