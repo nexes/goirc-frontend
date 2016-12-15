@@ -5,7 +5,6 @@ export class ChannelTab extends React.Component {
     constructor(props) {
         super(props);
 
-        this.channels = [];
         this.tabClick = this.tabClick.bind(this);
     }
 
@@ -17,12 +16,11 @@ export class ChannelTab extends React.Component {
     }
 
     shouldComponentUpdate(nextprops, nextstate) {
-        return nextprops.channels.length !== this.channels.length;
+        return this.props.channels !== nextprops.channels;
     }
 
     render() {
         let list = this.props.channels.map((value, index) => {
-            this.channels[index] = value;
             return <li key={index} onClick={this.tabClick}><a href="#">{value}</a></li>;
         });
 

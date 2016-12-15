@@ -93,15 +93,25 @@ func (i *ircHandler) ircRequest() {
 			} else {
 				fmt.Println("channel is nil")
 			}
+
 		} else if strings.EqualFold(requestIRC.Command, "join") {
 			fmt.Printf("requestIRC.Room = %s, requestIRC.Data = %s\n", requestIRC.Room, requestIRC.Data)
-			_, err := i.irc.JoinChannel(requestIRC.Data)
+			_, err := i.irc.JoinChannel(requestIRC.Room)
 
 			if err != nil {
 				fmt.Printf("Error joining room %s\n", err.Error())
 			}
+
 		} else if strings.EqualFold(requestIRC.Command, "pong") {
 			i.irc.SendPongResponse()
+
+		} else if strings.EqualFold(requestIRC.Command, "part") {
+			chn := i.irc.GetChannel(requestIRC.Room)
+
+			if chn != nil {
+				fmt.Printf("channel found: %s\n", chn.Name)
+				i.irc.LeaveChannel(chn, "Bye people")
+			}
 		}
 	}
 }

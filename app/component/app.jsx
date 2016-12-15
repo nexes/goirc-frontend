@@ -36,9 +36,12 @@ export class App extends React.Component {
 
     updateChannels(command, name) {
         let newChannels = this.state.channels.slice();
+        let channel = '';
 
         if (command === 'join') {
             if (!newChannels.includes(name)) {
+                channel = name;
+
                 this.setState({
                     channels: newChannels.concat(name),
                     activeChannel: name
@@ -46,14 +49,22 @@ export class App extends React.Component {
             }
 
         } else if (command == 'part') {
-            let index = newChannels.indexOf(name);
-            if (index === -1)
-                return;
-
-            newChannels.slice(index, 1);
-            //update active channel
-            this.setState({ channels: newChannels });
+            newChannels.forEach((value, index) => {
+                if (value === name || value === '#'+name) {
+                    //TODO: need to update active channel
+                    channel = value;
+                    newChannels.splice(index, 1);
+                    this.setState({channels: newChannels});
+                }
+            });
         }
+
+        //we could handle part messages with the data property
+        this.irc.sendCommand({
+            command: command,
+            data: '',
+            channel: channel
+        });
     }
 
     updateActiveChannel(channelName) {
@@ -89,8 +100,8 @@ export class App extends React.Component {
 
                 newChannels.forEach((value, index) => {
                     if (ircMsg.NewName.includes(value)) {
-                        newChannels.slice(index, 1);
-                        newChannels.push(value);
+                        newChannels.splice(index, 1);
+                        newChannels.push(ircMsg.NewName);
 
                         this.setState({
                             channels: newChannels,
@@ -123,7 +134,6 @@ export class App extends React.Component {
     sendUserInput(input) {
         if (input.length !== 0) {
             let cmdInput = input.trim();
-            //default command will be write
             let cmd = 'write';
             let data = cmdInput;
 
@@ -132,16 +142,20 @@ export class App extends React.Component {
                 cmd = cmdInput.substring(1, cmdInput.indexOf(' ')).toLowerCase();
                 data = cmdInput.substring(cmd.length + 2);
 
-                if (cmd === 'join' || cmd === 'part')
+                //as of right now only join and part commans are supported
+                if (cmd === 'join' || cmd === 'part') {
                     this.updateChannels(cmd, data);
-            }
+                }
 
-            //need to get the active channel from channeltab element
-            this.irc.sendCommand({
-                command: cmd,
-                data: data,
-                channel: this.state.activeChannel
-            });
+            } else {
+                //need to get the active channel from channeltab element
+                console.log('active channel = ' + this.state.activeChannel);
+                this.irc.sendCommand({
+                    command: cmd,
+                    data: data,
+                    channel: this.state.activeChannel
+                });
+            }
         }
     }
 
