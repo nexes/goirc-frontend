@@ -16,7 +16,7 @@ export class ChatOutput extends React.Component {
         });
 
         return (
-            <div className="chat-output">
+            <div className="chat-output" ref={(elm) => {if(elm) elm.scrollTop = elm.scrollHeight;}}>
                 {messages}
             </div>
         );
