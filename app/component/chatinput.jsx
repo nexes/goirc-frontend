@@ -12,22 +12,22 @@ export class ChatInput extends React.Component {
         this.submitUserInput = this.submitUserInput.bind(this);
     }
 
+
     updateUserInput(e) {
-        this.setState({input: e.target.value});
+        this.setState({ input: e.target.value });
     }
 
     submitUserInput() {
-        if (this.state.input !== '') {
-            this.props.inputSubmit(this.state.input);
-            this.setState({input: ''});
-        }
+        this.props.inputSubmit(this.state.input);
+        this.setState({ input: '' });
     }
+
 
     render() {
         return (
             <div className="chat-input">
                 <span className="input-name well well-sm">Server:</span>
-                <input type="text" className="input-msg" placeholder="message" value={this.state.input} onChange={this.updateUserInput}/>
+                <input type="text" className="input-msg" placeholder="message" value={this.state.input} onChange={this.updateUserInput} />
                 <button className="input-send btn btn-primary" onClick={this.submitUserInput}>Send</button>
             </div>
         );
