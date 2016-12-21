@@ -37,9 +37,9 @@ class ChatMessage extends React.Component {
     }
 
     shouldComponentUpdate(nextProps, nextState) {
-            return !(this.data.channel === nextProps.channel && 
-                    this.data.message === nextProps.message && 
-                    this.data.nick === nextProps.nick);
+        return !(this.data.channel === nextProps.channel && 
+            this.data.message === nextProps.message && 
+            this.data.nick === nextProps.nick);
     }
 
     render() {
@@ -50,8 +50,8 @@ class ChatMessage extends React.Component {
 
         return (
             <div className="msg">
-                <div className="nick">{this.props.nick}</div>
-                <div className="message">[{this.data.time}] {this.props.message}</div>
+                <div className="nick">[{this.data.time}] {this.props.nick}</div>
+                <div className="message">{this.props.message}</div>
             </div>
         );
     }
