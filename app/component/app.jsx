@@ -51,10 +51,12 @@ export class App extends React.Component {
         } else if (command == 'part') {
             newChannels.forEach((value, index) => {
                 if (value === name || value === '#'+name) {
-                    //TODO: need to update active channel
                     channel = value;
                     newChannels.splice(index, 1);
-                    this.setState({channels: newChannels});
+                    this.setState({
+                        channels: newChannels,
+                        activeChannel: newChannels[newChannels.length - 1] //set active channel to last one added
+                    });
                 }
             });
         }
@@ -164,7 +166,7 @@ export class App extends React.Component {
             <div>
                 <ChannelTab channels={this.state.channels} updateChannel={this.updateActiveChannel} />
                 <ChatOutput messages={this.state.messages} />
-                <ChatInput inputData={this.state.userInput} inputSubmit={this.sendUserInput} />
+                <ChatInput inputData={this.state.userInput} inputSubmit={this.sendUserInput} activeChannel={this.state.activeChannel} />
                 <NickList />
             </div>
         );
