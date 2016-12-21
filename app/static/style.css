@@ -20,9 +20,10 @@ html body {
     background-color: #383838;
     top: 0px;
     left: 0px;
+    right: 0px;
+    height: 41px;
     margin: 0px;
     padding: 0px;
-    width: 100%;
 }
 
 .channel-tab .tag > span {
@@ -73,20 +74,18 @@ html body {
 }
 
 .chat-output .msg {
-    width: 100%;
-    height: 30px;    
     background-color: #FFFFFF;
-    padding: 5px;
 }
 
 .msg .nick {
     border-right-color: #000000;
+    padding-right: 3px;
     float: left;
     color: blue;
 }
 
 .msg .message {
-    padding-left: 10px;
+    padding-left: 10%;
     color: red;
 }
 /*Chat Output End*/
