@@ -6,6 +6,10 @@ export class IRC {
     }
 
     sendLoginInfo(nick, server, pass = '') {
+        this.nick = nick;
+        this.password = pass;
+        this.server = server;
+
         let payload = {
             nick: nick,
             server: server,

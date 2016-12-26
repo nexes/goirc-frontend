@@ -21,6 +21,8 @@ export class App extends React.Component {
         };
 
         this.irc = this.props.route.irc;
+        this.userName = this.props.route.nick;
+        console.log(this.irc.nick);
 
         //bind class functions to 'this' for es6/react reasons
         this.ircMessageUpdate = this.ircMessageUpdate.bind(this);
@@ -151,7 +153,13 @@ export class App extends React.Component {
 
             } else {
                 //need to get the active channel from channeltab element
-                console.log('active channel = ' + this.state.activeChannel);
+                let msg = {
+                    channel: this.state.activeChannel,
+                    nick: this.irc.nick,
+                    message: data
+                };
+
+                this.setState({ messages: this.state.messages.concat(msg)}); 
                 this.irc.sendCommand({
                     command: cmd,
                     data: data,

@@ -12,11 +12,14 @@ class Main extends React.Component {
     constructor(props) {
         super(props);
 
-        this.sendLoginData = this.sendLoginData.bind(this);
         this.irc = new IRC();
+        this.sendLoginData = this.sendLoginData.bind(this);
     }
 
     sendLoginData(nick, server, pass = '') {
+        //update the users nick now that we know it
+        console.log('sendLoginData = ' + nick);
+
         this.irc.sendLoginInfo(nick, server, pass)
             .then((res) => {
                 this.irc.openConnection();
@@ -31,7 +34,7 @@ class Main extends React.Component {
         return (
             <Router history={browserHistory}>
                 <Route path="/" component={Login} loginfunc={this.sendLoginData}/>
-                <Route path="/irc" component={App} irc={this.irc}/>
+                <Route path="/irc" component={App} irc={this.irc} nick={this.userName}/>
             </Router>
         );
     }
