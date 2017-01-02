@@ -79,14 +79,22 @@ html body {
 
 .msg .nick {
     border-right-color: #000000;
-    padding-right: 3px;
+    padding-left: 10px;
+    padding-right: 5px;
     float: left;
     color: blue;
 }
 
+.msg .time {
+    margin-top: 5px;
+    float: left;
+    color: grey;
+    font-size: 10px;
+}
+
 .msg .message {
     padding-left: 10%;
-    color: red;
+    color: black;
 }
 /*Chat Output End*/
 
@@ -103,6 +111,7 @@ html body {
     padding-top: 10px;
     float: left;
     font-size: 15px;
+    white-space: nowrap;
 }
 
 .chat-input .input-msg {

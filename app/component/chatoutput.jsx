@@ -1,6 +1,5 @@
 import React from 'react';
 
-
 export class ChatOutput extends React.Component {
     constructor(props) {
         super(props);
@@ -50,7 +49,8 @@ class ChatMessage extends React.Component {
 
         return (
             <div className="msg">
-                <div className="nick">[{this.data.time}] {this.props.nick}</div>
+                <div className="time">[{this.data.time}]</div>
+                <div className="nick">{this.props.nick}:</div>
                 <div className="message">{this.props.message}</div>
             </div>
         );
