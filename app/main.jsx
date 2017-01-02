@@ -17,9 +17,6 @@ class Main extends React.Component {
     }
 
     sendLoginData(nick, server, pass = '') {
-        //update the users nick now that we know it
-        console.log('sendLoginData = ' + nick);
-
         this.irc.sendLoginInfo(nick, server, pass)
             .then((res) => {
                 this.irc.openConnection();

@@ -21,8 +21,6 @@ export class App extends React.Component {
         };
 
         this.irc = this.props.route.irc;
-        this.userName = this.props.route.nick;
-        console.log(this.irc.nick);
 
         //bind class functions to 'this' for es6/react reasons
         this.ircMessageUpdate = this.ircMessageUpdate.bind(this);
