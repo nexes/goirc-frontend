@@ -6,8 +6,6 @@ export class NickList extends React.Component {
     }
 
     render() {
-        return (
-            <h1>NickList</h1>
-        );
+        return null;
     }
 }

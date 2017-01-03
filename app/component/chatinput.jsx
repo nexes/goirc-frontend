@@ -8,9 +8,11 @@ export class ChatInput extends React.Component {
         this.state = {
             input: ''
         };
+
         this.updateUserInput = this.updateUserInput.bind(this);
         this.submitUserInput = this.submitUserInput.bind(this);
         this.keyPressEvent = this.keyPressEvent.bind(this);
+        this.userList = this.userList.bind(this);
     }
 
 
@@ -36,12 +38,17 @@ export class ChatInput extends React.Component {
         }
     }
 
+    userList(e) {
+        //TODO: right click to show the user list of the room
+        console.log(e.target);
+    }
+
     render() {
         return (
             <div className="chat-input">
                 <span className="input-name well well-sm">{this.props.activeChannel}</span>
                 <input type="text" className="input-msg" placeholder="message" value={this.state.input} onChange={this.updateUserInput} onKeyPress={this.keyPressEvent} />
-                <button className="input-send btn btn-primary" onClick={this.submitUserInput}>Send</button>
+                <button className="input-send btn btn-primary" onClick={this.submitUserInput} onContextMenu={this.userList}>Send</button>
             </div>
         );
     }

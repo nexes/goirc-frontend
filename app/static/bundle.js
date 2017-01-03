@@ -80,10 +80,10 @@
 	    function Main(props) {
 	        _classCallCheck(this, Main);
 
-	        var _this = _possibleConstructorReturn(this, (Main.__proto__ || Object.getPrototypeOf(Main)).call(this, props));
+	        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Main).call(this, props));
 
+	        _this.irc = new _irccommand.IRC();
 	        _this.sendLoginData = _this.sendLoginData.bind(_this);
-	        _this.ws = new _irccommand.IRC();
 	        return _this;
 	    }
 
@@ -94,16 +94,11 @@
 
 	            var pass = arguments.length <= 2 || arguments[2] === undefined ? '' : arguments[2];
 
-	            this.ws.sendLoginInfo(nick, server, pass).then(function (res) {
-	                if (res.ok) {
-	                    //this will be .json soon
-	                    res.text().then(function (data) {
-	                        _this2.ws.openConnection();
-	                        _reactRouter.browserHistory.push('/irc');
-	                    });
-	                } else {
-	                    console.log('error with fetch respons');
-	                }
+	            this.irc.sendLoginInfo(nick, server, pass).then(function (res) {
+	                _this2.irc.openConnection();
+	                _reactRouter.browserHistory.push('/irc');
+	            }).catch(function (res) {
+	                console.log('error from sendLoginData ', res);
 	            });
 	        }
 	    }, {
@@ -113,7 +108,7 @@
 	                _reactRouter.Router,
 	                { history: _reactRouter.browserHistory },
 	                _react2.default.createElement(_reactRouter.Route, { path: '/', component: _login.Login, loginfunc: this.sendLoginData }),
-	                _react2.default.createElement(_reactRouter.Route, { path: '/irc', component: _app.App, irc: this.ws })
+	                _react2.default.createElement(_reactRouter.Route, { path: '/irc', component: _app.App, irc: this.irc, nick: this.userName })
 	            );
 	        }
 	    }]);
@@ -232,14 +227,103 @@
 /***/ function(module, exports) {
 
 	// shim for using process in browser
-
 	var process = module.exports = {};
+
+	// cached from whatever global is present so that test runners that stub it
+	// don't break things.  But we need to wrap it in a try catch in case it is
+	// wrapped in strict mode code which doesn't define any globals.  It's inside a
+	// function because try/catches deoptimize in certain engines.
+
+	var cachedSetTimeout;
+	var cachedClearTimeout;
+
+	function defaultSetTimout() {
+	    throw new Error('setTimeout has not been defined');
+	}
+	function defaultClearTimeout () {
+	    throw new Error('clearTimeout has not been defined');
+	}
+	(function () {
+	    try {
+	        if (typeof setTimeout === 'function') {
+	            cachedSetTimeout = setTimeout;
+	        } else {
+	            cachedSetTimeout = defaultSetTimout;
+	        }
+	    } catch (e) {
+	        cachedSetTimeout = defaultSetTimout;
+	    }
+	    try {
+	        if (typeof clearTimeout === 'function') {
+	            cachedClearTimeout = clearTimeout;
+	        } else {
+	            cachedClearTimeout = defaultClearTimeout;
+	        }
+	    } catch (e) {
+	        cachedClearTimeout = defaultClearTimeout;
+	    }
+	} ())
+	function runTimeout(fun) {
+	    if (cachedSetTimeout === setTimeout) {
+	        //normal enviroments in sane situations
+	        return setTimeout(fun, 0);
+	    }
+	    // if setTimeout wasn't available but was latter defined
+	    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+	        cachedSetTimeout = setTimeout;
+	        return setTimeout(fun, 0);
+	    }
+	    try {
+	        // when when somebody has screwed with setTimeout but no I.E. maddness
+	        return cachedSetTimeout(fun, 0);
+	    } catch(e){
+	        try {
+	            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+	            return cachedSetTimeout.call(null, fun, 0);
+	        } catch(e){
+	            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+	            return cachedSetTimeout.call(this, fun, 0);
+	        }
+	    }
+
+
+	}
+	function runClearTimeout(marker) {
+	    if (cachedClearTimeout === clearTimeout) {
+	        //normal enviroments in sane situations
+	        return clearTimeout(marker);
+	    }
+	    // if clearTimeout wasn't available but was latter defined
+	    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+	        cachedClearTimeout = clearTimeout;
+	        return clearTimeout(marker);
+	    }
+	    try {
+	        // when when somebody has screwed with setTimeout but no I.E. maddness
+	        return cachedClearTimeout(marker);
+	    } catch (e){
+	        try {
+	            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+	            return cachedClearTimeout.call(null, marker);
+	        } catch (e){
+	            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+	            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+	            return cachedClearTimeout.call(this, marker);
+	        }
+	    }
+
+
+
+	}
 	var queue = [];
 	var draining = false;
 	var currentQueue;
 	var queueIndex = -1;
 
 	function cleanUpNextTick() {
+	    if (!draining || !currentQueue) {
+	        return;
+	    }
 	    draining = false;
 	    if (currentQueue.length) {
 	        queue = currentQueue.concat(queue);
@@ -255,7 +339,7 @@
 	    if (draining) {
 	        return;
 	    }
-	    var timeout = setTimeout(cleanUpNextTick);
+	    var timeout = runTimeout(cleanUpNextTick);
 	    draining = true;
 
 	    var len = queue.length;
@@ -272,7 +356,7 @@
 	    }
 	    currentQueue = null;
 	    draining = false;
-	    clearTimeout(timeout);
+	    runClearTimeout(timeout);
 	}
 
 	process.nextTick = function (fun) {
@@ -284,7 +368,7 @@
 	    }
 	    queue.push(new Item(fun, args));
 	    if (queue.length === 1 && !draining) {
-	        setTimeout(drainQueue, 0);
+	        runTimeout(drainQueue);
 	    }
 	};
 
@@ -24018,6 +24102,8 @@
 
 	var _routerWarning2 = _interopRequireDefault(_routerWarning);
 
+	var _Actions = __webpack_require__(184);
+
 	var _computeChangedRoutes2 = __webpack_require__(202);
 
 	var _computeChangedRoutes3 = _interopRequireDefault(_computeChangedRoutes2);
@@ -24064,6 +24150,10 @@
 	    }
 
 	    return (0, _isActive3.default)(location, indexOnly, state.location, state.routes, state.params);
+	  }
+
+	  function createLocationFromRedirectInfo(location) {
+	    return history.createLocation(location, _Actions.REPLACE);
 	  }
 
 	  var partialNextState = void 0;
@@ -24123,7 +24213,7 @@
 	    }
 
 	    function handleErrorOrRedirect(error, redirectInfo) {
-	      if (error) callback(error);else callback(null, redirectInfo);
+	      if (error) callback(error);else callback(null, createLocationFromRedirectInfo(redirectInfo));
 	    }
 	  }
 
@@ -24286,7 +24376,7 @@
 	          if (error) {
 	            listener(error);
 	          } else if (redirectLocation) {
-	            history.replace(redirectLocation);
+	            history.transitionTo(redirectLocation);
 	          } else if (nextState) {
 	            listener(null, nextState);
 	          } else {
@@ -25454,7 +25544,7 @@
 	  },
 
 	  propTypes: {
-	    to: oneOfType([string, object]),
+	    to: oneOfType([string, object]).isRequired,
 	    query: object,
 	    hash: string,
 	    state: object,
@@ -25515,11 +25605,6 @@
 
 
 	    if (router) {
-	      // If user does not specify a `to` prop, return an empty anchor tag.
-	      if (to == null) {
-	        return _react2.default.createElement('a', props);
-	      }
-
 	      var location = createLocationDescriptor(to, { query: query, hash: hash, state: state });
 	      props.href = router.createHref(location);
 
@@ -26274,8 +26359,6 @@
 
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-	var _Actions = __webpack_require__(184);
-
 	var _invariant = __webpack_require__(180);
 
 	var _invariant2 = _interopRequireDefault(_invariant);
@@ -26334,7 +26417,7 @@
 	  history = (0, _RouterUtils.createRoutingHistory)(history, transitionManager);
 
 	  transitionManager.match(location, function (error, redirectLocation, nextState) {
-	    callback(error, redirectLocation && router.createLocation(redirectLocation, _Actions.REPLACE), nextState && _extends({}, nextState, {
+	    callback(error, redirectLocation, nextState && _extends({}, nextState, {
 	      history: history,
 	      router: router,
 	      matchContext: { history: history, transitionManager: transitionManager, router: router }
@@ -27088,7 +27171,7 @@
 	    function Login(props) {
 	        _classCallCheck(this, Login);
 
-	        var _this = _possibleConstructorReturn(this, (Login.__proto__ || Object.getPrototypeOf(Login)).call(this, props));
+	        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Login).call(this, props));
 
 	        _this.state = {
 	            nick: '',
@@ -27187,7 +27270,7 @@
 	    function Title(props) {
 	        _classCallCheck(this, Title);
 
-	        return _possibleConstructorReturn(this, (Title.__proto__ || Object.getPrototypeOf(Title)).call(this, props));
+	        return _possibleConstructorReturn(this, Object.getPrototypeOf(Title).call(this, props));
 	    }
 
 	    _createClass(Title, [{
@@ -27219,7 +27302,7 @@
 	    function Footer(props) {
 	        _classCallCheck(this, Footer);
 
-	        return _possibleConstructorReturn(this, (Footer.__proto__ || Object.getPrototypeOf(Footer)).call(this, props));
+	        return _possibleConstructorReturn(this, Object.getPrototypeOf(Footer).call(this, props));
 	    }
 
 	    _createClass(Footer, [{
@@ -27284,47 +27367,176 @@
 	    function App(props) {
 	        _classCallCheck(this, App);
 
-	        var _this = _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).call(this, props));
+	        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(App).call(this, props));
 
 	        _this.state = {
-	            //array of objects representing irc messages
 	            messages: [{
 	                channel: '',
 	                nick: '',
-	                msg: ''
+	                message: ''
 	            }],
-	            //array of channel names: string
-	            channels: []
+	            activeChannel: '',
+	            channels: [],
+	            userInput: ''
 	        };
+
 	        _this.irc = _this.props.route.irc;
+
+	        //bind class functions to 'this' for es6/react reasons
 	        _this.ircMessageUpdate = _this.ircMessageUpdate.bind(_this);
 	        _this.sendUserInput = _this.sendUserInput.bind(_this);
+	        _this.updateChannels = _this.updateChannels.bind(_this);
+	        _this.updateActiveChannel = _this.updateActiveChannel.bind(_this);
 	        return _this;
 	    }
 
 	    _createClass(App, [{
 	        key: 'componentDidMount',
 	        value: function componentDidMount() {
-	            console.log('componentDidMount called');
+	            //setup the websocket onmessage event, needs to wait after the component loads
 	            this.irc.setSocketMessageEvent(this.ircMessageUpdate);
 	        }
 	    }, {
+	        key: 'updateChannels',
+	        value: function updateChannels(command, name) {
+	            var _this2 = this;
+
+	            var newChannels = this.state.channels.slice();
+	            var channel = '';
+
+	            if (command === 'join') {
+	                if (!newChannels.includes(name)) {
+	                    channel = name;
+
+	                    this.setState({
+	                        channels: newChannels.concat(name),
+	                        activeChannel: name
+	                    });
+	                }
+	            } else if (command == 'part') {
+	                newChannels.forEach(function (value, index) {
+	                    if (value === name || value === '#' + name) {
+	                        channel = value;
+	                        newChannels.splice(index, 1);
+	                        _this2.setState({
+	                            channels: newChannels,
+	                            activeChannel: newChannels[newChannels.length - 1] //set active channel to last one added
+	                        });
+	                    }
+	                });
+	            }
+
+	            //we could handle part messages with the data property
+	            this.irc.sendCommand({
+	                command: command,
+	                data: '',
+	                channel: channel
+	            });
+	        }
+	    }, {
+	        key: 'updateActiveChannel',
+	        value: function updateActiveChannel(channelName) {
+	            if (this.state.activeChannel !== channelName) this.setState({ activeChannel: channelName });
+	        }
+
+	        //working on this function.
+
+	    }, {
 	        key: 'ircMessageUpdate',
 	        value: function ircMessageUpdate(event) {
-	            var ji = JSON.parse(event.data);
-	            var msg = {
-	                channel: ji.Channel || 'Server',
-	                nick: ji.Nick || '',
-	                msg: ji.MSG || ji.MOTD || 'what'
-	            };
+	            var _this3 = this;
 
-	            //dont need to render an array everytime, just one message elem ???
-	            this.setState({ messages: this.state.messages.concat(msg) });
+	            var ircMsg = JSON.parse(event.data);
+	            var msg = {};
+
+	            console.log(ircMsg);
+
+	            (function () {
+	                switch (ircMsg.IDName) {
+	                    case 'PING':
+	                        _this3.irc.sendCommand({
+	                            command: 'pong',
+	                            room: '',
+	                            data: ''
+	                        });
+	                        break;
+
+	                    case 'RPL_MOTD':
+	                        msg.channel = ircMsg.Host;
+	                        msg.nick = '';
+	                        msg.message = ircMsg.MOTD;
+
+	                        _this3.setState({ messages: _this3.state.messages.concat(msg) });
+	                        break;
+
+	                    case 'RPL_CHANNELNAME':
+	                        var newChannels = _this3.state.channels.slice();
+
+	                        newChannels.forEach(function (value, index) {
+	                            if (ircMsg.NewName.includes(value)) {
+	                                newChannels.splice(index, 1);
+	                                newChannels.push(ircMsg.NewName);
+
+	                                _this3.setState({
+	                                    channels: newChannels,
+	                                    activeChannel: value
+	                                });
+	                            }
+	                        });
+	                        break;
+
+	                    case 'RPL_NICKJOIN':
+	                        //TODO: update nick list for the channel given
+	                        break;
+
+	                    case 'RPL_NICKQUIT':
+	                        //TODO: update nick list for the channel given
+	                        break;
+
+	                    case 'RPL_PRIVMSG':
+	                        //TODO: make sure messages are shown in the correct room
+	                        msg.channel = ircMsg.Channel;
+	                        msg.nick = ircMsg.Nick;
+	                        msg.message = ircMsg.MSG;
+
+	                        _this3.setState({ messages: _this3.state.messages.concat(msg) });
+	                        break;
+	                }
+	            })();
 	        }
 	    }, {
 	        key: 'sendUserInput',
-	        value: function sendUserInput(event) {
-	            console.log('userInput ', event);
+	        value: function sendUserInput(input) {
+	            if (input.length !== 0) {
+	                var cmdInput = input.trim();
+	                var cmd = 'write';
+	                var data = cmdInput;
+
+	                //if the user is sending a command
+	                if (cmdInput[0] === '/') {
+	                    cmd = cmdInput.substring(1, cmdInput.indexOf(' ')).toLowerCase();
+	                    data = cmdInput.substring(cmd.length + 2);
+
+	                    //as of right now only join and part commans are supported
+	                    if (cmd === 'join' || cmd === 'part') {
+	                        this.updateChannels(cmd, data);
+	                    }
+	                } else {
+	                    //need to get the active channel from channeltab element
+	                    var msg = {
+	                        channel: this.state.activeChannel,
+	                        nick: this.irc.nick,
+	                        message: data
+	                    };
+
+	                    this.setState({ messages: this.state.messages.concat(msg) });
+	                    this.irc.sendCommand({
+	                        command: cmd,
+	                        data: data,
+	                        channel: this.state.activeChannel
+	                    });
+	                }
+	            }
 	        }
 	    }, {
 	        key: 'render',
@@ -27332,9 +27544,9 @@
 	            return _react2.default.createElement(
 	                'div',
 	                null,
-	                _react2.default.createElement(_channeltab.ChannelTab, { channels: this.state.channels }),
+	                _react2.default.createElement(_channeltab.ChannelTab, { channels: this.state.channels, updateChannel: this.updateActiveChannel }),
 	                _react2.default.createElement(_chatoutput.ChatOutput, { messages: this.state.messages }),
-	                _react2.default.createElement(_chatinput.ChatInput, { sendInput: this.sendUserInput }),
+	                _react2.default.createElement(_chatinput.ChatInput, { inputData: this.state.userInput, inputSubmit: this.sendUserInput, activeChannel: this.state.activeChannel }),
 	                _react2.default.createElement(_nicklist.NickList, null)
 	            );
 	        }
@@ -27347,7 +27559,7 @@
 /* 237 */
 /***/ function(module, exports, __webpack_require__) {
 
-	"use strict";
+	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
@@ -27374,62 +27586,59 @@
 	    function ChannelTab(props) {
 	        _classCallCheck(this, ChannelTab);
 
-	        return _possibleConstructorReturn(this, (ChannelTab.__proto__ || Object.getPrototypeOf(ChannelTab)).call(this, props));
+	        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(ChannelTab).call(this, props));
+
+	        _this.tabLeftClick = _this.tabLeftClick.bind(_this);
+	        _this.tabRightClick = _this.tabRightClick.bind(_this);
+	        return _this;
 	    }
 
 	    _createClass(ChannelTab, [{
-	        key: "render",
+	        key: 'tabLeftClick',
+	        value: function tabLeftClick(e) {
+	            var name = e.target.innerText;
+	            if (name !== '') this.props.updateChannel(name);
+	        }
+	    }, {
+	        key: 'tabRightClick',
+	        value: function tabRightClick(e) {}
+	    }, {
+	        key: 'shouldComponentUpdate',
+	        value: function shouldComponentUpdate(nextprops, nextstate) {
+	            return this.props.channels !== nextprops.channels;
+	        }
+	    }, {
+	        key: 'render',
 	        value: function render() {
-	            return _react2.default.createElement(
-	                "div",
-	                { className: "channel-tab" },
-	                _react2.default.createElement(
-	                    "ul",
-	                    null,
+	            var _this2 = this;
+
+	            var list = this.props.channels.map(function (value, index) {
+	                return _react2.default.createElement(
+	                    'li',
+	                    { key: index, onClick: _this2.tabLeftClick, onContextMenu: _this2.tabRightClick },
 	                    _react2.default.createElement(
-	                        "li",
-	                        { className: "active" },
-	                        _react2.default.createElement(
-	                            "a",
-	                            { href: "#" },
-	                            "Server"
-	                        )
-	                    ),
-	                    _react2.default.createElement(
-	                        "li",
-	                        null,
-	                        _react2.default.createElement(
-	                            "a",
-	                            { href: "#" },
-	                            "#programming"
-	                        )
-	                    ),
-	                    _react2.default.createElement(
-	                        "li",
-	                        null,
-	                        _react2.default.createElement(
-	                            "a",
-	                            { href: "#" },
-	                            "#go-nuts"
-	                        )
-	                    ),
-	                    _react2.default.createElement(
-	                        "li",
-	                        null,
-	                        _react2.default.createElement(
-	                            "a",
-	                            { href: "#" },
-	                            "#go-nuts"
-	                        )
+	                        'a',
+	                        { href: '#' },
+	                        value
 	                    )
+	                );
+	            });
+
+	            return _react2.default.createElement(
+	                'div',
+	                { className: 'channel-tab' },
+	                _react2.default.createElement(
+	                    'ul',
+	                    null,
+	                    list
 	                ),
 	                _react2.default.createElement(
-	                    "div",
-	                    { className: "tag" },
+	                    'div',
+	                    { className: 'tag' },
 	                    _react2.default.createElement(
-	                        "span",
+	                        'span',
 	                        null,
-	                        "goIRC"
+	                        'goIRC'
 	                    )
 	                )
 	            );
@@ -27470,19 +27679,48 @@
 	    function ChatInput(props) {
 	        _classCallCheck(this, ChatInput);
 
-	        //dont need this to be state? dont need to cause a render call
-	        var _this = _possibleConstructorReturn(this, (ChatInput.__proto__ || Object.getPrototypeOf(ChatInput)).call(this, props));
+	        var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(ChatInput).call(this, props));
 
-	        _this.command = '';
-	        _this.userInput = _this.userInput.bind(_this);
+	        _this.state = {
+	            input: ''
+	        };
+
+	        _this.updateUserInput = _this.updateUserInput.bind(_this);
+	        _this.submitUserInput = _this.submitUserInput.bind(_this);
+	        _this.keyPressEvent = _this.keyPressEvent.bind(_this);
+	        _this.userList = _this.userList.bind(_this);
 	        return _this;
 	    }
 
 	    _createClass(ChatInput, [{
-	        key: 'userInput',
-	        value: function userInput(e) {
-	            this.command = e.target.value;
-	            console.log(this.command);
+	        key: 'shouldComponentUpdate',
+	        value: function shouldComponentUpdate(nextProps, nextState) {
+	            return !(nextState.input === this.state.input && nextProps.activeChannel === this.props.activeChannel);
+	        }
+	    }, {
+	        key: 'keyPressEvent',
+	        value: function keyPressEvent(e) {
+	            if (e.key === 'Enter') {
+	                this.submitUserInput();
+	            }
+	        }
+	    }, {
+	        key: 'updateUserInput',
+	        value: function updateUserInput(e) {
+	            this.setState({ input: e.target.value });
+	        }
+	    }, {
+	        key: 'submitUserInput',
+	        value: function submitUserInput() {
+	            if (this.state.input !== '') {
+	                this.props.inputSubmit(this.state.input);
+	                this.setState({ input: '' });
+	            }
+	        }
+	    }, {
+	        key: 'userList',
+	        value: function userList(e) {
+	            console.log(e.target);
 	        }
 	    }, {
 	        key: 'render',
@@ -27493,12 +27731,12 @@
 	                _react2.default.createElement(
 	                    'span',
 	                    { className: 'input-name well well-sm' },
-	                    'Server:'
+	                    this.props.activeChannel
 	                ),
-	                _react2.default.createElement('input', { type: 'text', className: 'input-msg', placeholder: 'message', onChange: this.userInput }),
+	                _react2.default.createElement('input', { type: 'text', className: 'input-msg', placeholder: 'message', value: this.state.input, onChange: this.updateUserInput, onKeyPress: this.keyPressEvent }),
 	                _react2.default.createElement(
 	                    'button',
-	                    { className: 'input-send btn btn-primary', onClick: this.props.sendInput },
+	                    { className: 'input-send btn btn-primary', onClick: this.submitUserInput, onContextMenu: this.userList },
 	                    'Send'
 	                )
 	            );
@@ -27539,46 +27777,90 @@
 	    function ChatOutput(props) {
 	        _classCallCheck(this, ChatOutput);
 
-	        var _this = _possibleConstructorReturn(this, (ChatOutput.__proto__ || Object.getPrototypeOf(ChatOutput)).call(this, props));
-
-	        _this.updateMessages = _this.updateMessages.bind(_this);
-	        return _this;
+	        return _possibleConstructorReturn(this, Object.getPrototypeOf(ChatOutput).call(this, props));
 	    }
 
 	    _createClass(ChatOutput, [{
-	        key: "updateMessages",
-	        value: function updateMessages() {
-	            return this.props.messages.map(function (item, index) {
+	        key: "render",
+	        value: function render() {
+	            var messages = this.props.messages.map(function (item, index) {
 	                return _react2.default.createElement(
 	                    "div",
 	                    { className: "msg", key: index },
-	                    _react2.default.createElement(
-	                        "div",
-	                        { className: "nick" },
-	                        item.channel
-	                    ),
-	                    _react2.default.createElement(
-	                        "div",
-	                        { className: "message" },
-	                        item.msg
-	                    )
+	                    _react2.default.createElement(ChatMessage, { nick: item.nick, channel: item.channel, message: item.message })
 	                );
 	            });
-	        }
-	    }, {
-	        key: "render",
-	        value: function render() {
-	            var messages = this.updateMessages();
 
 	            return _react2.default.createElement(
 	                "div",
-	                { className: "chat-output" },
+	                { className: "chat-output", ref: function ref(elm) {
+	                        if (elm) elm.scrollTop = elm.scrollHeight;
+	                    } },
 	                messages
 	            );
 	        }
 	    }]);
 
 	    return ChatOutput;
+	}(_react2.default.Component);
+
+	var ChatMessage = function (_React$Component2) {
+	    _inherits(ChatMessage, _React$Component2);
+
+	    function ChatMessage(props) {
+	        _classCallCheck(this, ChatMessage);
+
+	        //doesn't need to be state, wont update this, just need to store for shouldComponentUpdate
+	        var _this2 = _possibleConstructorReturn(this, Object.getPrototypeOf(ChatMessage).call(this, props));
+
+	        _this2.data = {
+	            channel: '',
+	            message: '',
+	            nick: '',
+	            time: ''
+	        };
+	        return _this2;
+	    }
+
+	    _createClass(ChatMessage, [{
+	        key: "shouldComponentUpdate",
+	        value: function shouldComponentUpdate(nextProps, nextState) {
+	            return !(this.data.channel === nextProps.channel && this.data.message === nextProps.message && this.data.nick === nextProps.nick);
+	        }
+	    }, {
+	        key: "render",
+	        value: function render() {
+	            this.data.time = new Date().toTimeString().slice(0, 8);
+	            this.data.channel = this.props.channel;
+	            this.data.message = this.props.message;
+	            this.data.nick = this.props.nick;
+
+	            return _react2.default.createElement(
+	                "div",
+	                { className: "msg" },
+	                _react2.default.createElement(
+	                    "div",
+	                    { className: "time" },
+	                    "[",
+	                    this.data.time,
+	                    "]"
+	                ),
+	                _react2.default.createElement(
+	                    "div",
+	                    { className: "nick" },
+	                    this.props.nick,
+	                    ":"
+	                ),
+	                _react2.default.createElement(
+	                    "div",
+	                    { className: "message" },
+	                    this.props.message
+	                )
+	            );
+	        }
+	    }]);
+
+	    return ChatMessage;
 	}(_react2.default.Component);
 
 /***/ },
@@ -27612,17 +27894,13 @@
 	    function NickList(props) {
 	        _classCallCheck(this, NickList);
 
-	        return _possibleConstructorReturn(this, (NickList.__proto__ || Object.getPrototypeOf(NickList)).call(this, props));
+	        return _possibleConstructorReturn(this, Object.getPrototypeOf(NickList).call(this, props));
 	    }
 
 	    _createClass(NickList, [{
 	        key: 'render',
 	        value: function render() {
-	            return _react2.default.createElement(
-	                'h1',
-	                null,
-	                'NickList'
-	            );
+	            return null;
 	        }
 	    }]);
 
@@ -27655,9 +27933,11 @@
 	    _createClass(IRC, [{
 	        key: 'sendLoginInfo',
 	        value: function sendLoginInfo(nick, server) {
-	            var _this = this;
-
 	            var pass = arguments.length <= 2 || arguments[2] === undefined ? '' : arguments[2];
+
+	            this.nick = nick;
+	            this.password = pass;
+	            this.server = server;
 
 	            var payload = {
 	                nick: nick,
@@ -27666,29 +27946,41 @@
 	            };
 
 	            if (window.fetch) {
-	                return fetch('/api/irc/connect', {
-	                    method: 'POST',
-	                    body: JSON.stringify(payload),
-	                    headers: new Headers({
-	                        'Content-Type': 'application/json'
-	                    })
+	                return new Promise(function (resolve, reject) {
+	                    fetch('/api/irc/connect', {
+	                        method: 'POST',
+	                        body: JSON.stringify(payload),
+	                        headers: new Headers({
+	                            'Content-Type': 'application/json'
+	                        })
+	                    }).then(function (res) {
+	                        if (res.ok) {
+	                            res.text().then(function (data) {
+	                                resolve(data);
+	                            });
+	                        } else {
+	                            reject(res.statusText);
+	                        }
+	                    }).catch(function (error) {
+	                        reject(error.message);
+	                    });
 	                });
 	            } else {
-	                var req = new XMLHttpRequest();
+	                return new Promise(function (resolve, reject) {
+	                    var req = new XMLHttpRequest();
 
-	                req.addEventListener('load', function (e) {
-	                    //handle success
-	                    _this.openConnection();
-	                    console.log('from XMLHttpRequest load', e.target.response);
+	                    req.addEventListener('load', function (e) {
+	                        console.log('from xmlhttp response ', e.target.response);
+	                        resolve(e.target.response);
+	                    });
+	                    req.addEventListener('error', function (e) {
+	                        console.log('from xmlhttp error, ', e.target.response);
+	                        reject(e.target.response);
+	                    });
+
+	                    req.open('POST', '/api/irc/connect');
+	                    req.send(JSON.stringify(payload));
 	                });
-
-	                req.addEventListener('error', function (e) {
-	                    //handle errors
-	                    console.log('from XMLHttpRequest error', e.target.response);
-	                });
-
-	                req.open('POST', '/api/irc/connect');
-	                req.send(JSON.stringify(payload));
 	            }
 	        }
 	    }, {
@@ -27703,7 +27995,9 @@
 	    }, {
 	        key: 'setSocketMessageEvent',
 	        value: function setSocketMessageEvent(fnc) {
-	            this.ws.onmessage = fnc;
+	            if (this.ws !== undefined && typeof fnc === 'function') {
+	                this.ws.onmessage = fnc;
+	            }
 	        }
 	    }, {
 	        key: 'openConnection',
@@ -27715,7 +28009,9 @@
 	        }
 	    }, {
 	        key: 'sendCommand',
-	        value: function sendCommand(cmd) {}
+	        value: function sendCommand(command) {
+	            this.ws.send(JSON.stringify(command));
+	        }
 	    }]);
 
 	    return IRC;

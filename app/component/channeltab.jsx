@@ -5,14 +5,18 @@ export class ChannelTab extends React.Component {
     constructor(props) {
         super(props);
 
-        this.tabClick = this.tabClick.bind(this);
+        this.tabLeftClick = this.tabLeftClick.bind(this);
+        this.tabRightClick = this.tabRightClick.bind(this);
     }
 
-    tabClick(e) {
+    tabLeftClick(e) {
         let name = e.target.innerText;
-
         if (name !== '')
             this.props.updateChannel(name);
+    }
+
+    tabRightClick(e) {
+        //TODO: right click to do channel operations, part etc
     }
 
     shouldComponentUpdate(nextprops, nextstate) {
@@ -21,7 +25,7 @@ export class ChannelTab extends React.Component {
 
     render() {
         let list = this.props.channels.map((value, index) => {
-            return <li key={index} onClick={this.tabClick}><a href="#">{value}</a></li>;
+            return <li key={index} onClick={this.tabLeftClick} onContextMenu={this.tabRightClick}><a href="#">{value}</a></li>;
         });
 
         return (
