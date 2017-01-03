@@ -10,10 +10,11 @@ export class Login extends React.Component {
             pass: '',
             server: ''
         };
+
         this.sendLogin = this.props.route.loginfunc;
-        
         this.connectToIRC = this.connectToIRC.bind(this);
         this.updateInput = this.updateInput.bind(this);
+        this.enterKeyEvent = this.enterKeyEvent.bind(this);
     }
 
     updateInput(e) {
@@ -40,6 +41,12 @@ export class Login extends React.Component {
         }
 
         this.sendLogin(this.state.nick, this.state.server, this.state.pass);
+    }
+
+    enterKeyEvent(e) {
+        if (e.key === 'Enter') {
+            this.connectToIRC();
+        }
     }
 
     render() {
@@ -70,6 +77,7 @@ export class Login extends React.Component {
                             className="form-control"
                             value={this.state.server}
                             onChange={this.updateInput}
+                            onKeyUp={this.enterKeyEvent}
                             placeholder="Server  e.g irc.freenode.net"/>
                     </div>
                     <button
