@@ -27178,10 +27178,11 @@
 	            pass: '',
 	            server: ''
 	        };
-	        _this.sendLogin = _this.props.route.loginfunc;
 
+	        _this.sendLogin = _this.props.route.loginfunc;
 	        _this.connectToIRC = _this.connectToIRC.bind(_this);
 	        _this.updateInput = _this.updateInput.bind(_this);
+	        _this.enterKeyEvent = _this.enterKeyEvent.bind(_this);
 	        return _this;
 	    }
 
@@ -27210,6 +27211,13 @@
 	            }
 
 	            this.sendLogin(this.state.nick, this.state.server, this.state.pass);
+	        }
+	    }, {
+	        key: 'enterKeyEvent',
+	        value: function enterKeyEvent(e) {
+	            if (e.key === 'Enter') {
+	                this.connectToIRC();
+	            }
 	        }
 	    }, {
 	        key: 'render',
@@ -27245,6 +27253,7 @@
 	                            className: 'form-control',
 	                            value: this.state.server,
 	                            onChange: this.updateInput,
+	                            onKeyUp: this.enterKeyEvent,
 	                            placeholder: 'Server  e.g irc.freenode.net' })
 	                    ),
 	                    _react2.default.createElement(
@@ -27601,7 +27610,9 @@
 	        }
 	    }, {
 	        key: 'tabRightClick',
-	        value: function tabRightClick(e) {}
+	        value: function tabRightClick(e) {
+	            //TODO: right click to do channel operations, part etc
+	        }
 	    }, {
 	        key: 'shouldComponentUpdate',
 	        value: function shouldComponentUpdate(nextprops, nextstate) {
@@ -27720,6 +27731,7 @@
 	    }, {
 	        key: 'userList',
 	        value: function userList(e) {
+	            //TODO: right click to show the user list of the room
 	            console.log(e.target);
 	        }
 	    }, {
