@@ -1,1 +1,1 @@
-web: goirc-frontend
+web: src
