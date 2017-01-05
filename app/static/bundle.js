@@ -27380,10 +27380,17 @@
 
 	        _this.state = {
 	            messages: [{
-	                channel: '',
-	                nick: '',
-	                message: ''
+	                channel: {
+	                    name: '',
+	                    nick: '',
+	                    message: ''
+	                }
 	            }],
+	            //messages: [{
+	            //messchannel: '',
+	            //messnick: '',
+	            //messmessage: ''
+	            //}],
 	            activeChannel: '',
 	            channels: [],
 	            userInput: ''
