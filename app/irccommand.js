@@ -70,7 +70,9 @@ export class IRC {
 
     openConnection() {
         if (this.ws === undefined) {
-            this.ws = new WebSocket('ws://localhost:8080/api/irc/connect');
+            console.log('ws://' + window.location.host + '/api/irc/connect');
+            this.ws = new WebSocket('ws://' + window.location.host + '/api/irc/connect')
+            // this.ws = new WebSocket('ws://localhost:8080/api/irc/connect');
         }
         this.ws.onopen = this.socketOpen;
     }
