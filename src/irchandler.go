@@ -12,8 +12,6 @@ import (
 
 //our object that makes a connection to our goirc API and the websocket to communicate over
 type ircHandler struct {
-	open bool
-
 	irc  goirc.Client
 	conn *websocket.Conn
 }
@@ -44,7 +42,7 @@ func (i *ircHandler) ircResponses() {
 	defer i.irc.CloseConnection("bye goirc")
 	defer i.conn.Close()
 
-	for i.irc.IsOpen() {
+	for {
 		select {
 		case fromSrv := <-i.irc.RecvServerMessage():
 			err := i.conn.WriteJSON(fromSrv)
@@ -128,12 +126,6 @@ func (i *ircHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 		dec := json.NewDecoder(req.Body)
 		dec.Decode(&info)
 
-		//do i need this
-		if i.open {
-			encdr.Encode(responseData{response: "connection already open", status: 500})
-			return
-		}
-
 		i.irc = goirc.Client{
 			Nick:     info.Nick,
 			Server:   info.ServerName,
@@ -147,7 +139,6 @@ func (i *ircHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		i.open = true
 		encdr.Encode(responseData{response: "IRC connection open", status: 200})
 
 	case http.MethodGet:
@@ -156,23 +147,17 @@ func (i *ircHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 			WriteBufferSize: 1024,
 		}
 
-		if i.open {
-			conn, err := upgrader.Upgrade(res, req, nil)
-			if err != nil {
-				fmt.Printf("error with server ws %s", err.Error())
-				encdr.Encode(responseData{response: "Error upgrading to ws protocol", status: 500})
-				return
-			}
-			i.conn = conn
-
-			go i.ircResponses()
-			go i.ircRequest()
-			encdr.Encode(responseData{response: "listening", status: 200})
-
-		} else {
-			encdr.Encode(responseData{response: "send POST request first", status: 500})
+		conn, err := upgrader.Upgrade(res, req, nil)
+		if err != nil {
+			fmt.Printf("error with server ws %s", err.Error())
+			encdr.Encode(responseData{response: "Error upgrading to ws protocol", status: 500})
 			return
 		}
+		i.conn = conn
+
+		go i.ircResponses()
+		go i.ircRequest()
+		encdr.Encode(responseData{response: "listening", status: 200})
 
 	default:
 		fmt.Println("nope")
