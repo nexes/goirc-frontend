@@ -3,13 +3,19 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 )
 
 func main() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
 	irc := &ircHandler{}
 	server := &http.Server{
-		Addr: ":8080",
+		Addr: port,
 		//these are abitrary right now, we will find a time that means something
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
