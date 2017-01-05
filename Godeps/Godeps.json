@@ -1,0 +1,19 @@
+{
+	"ImportPath": "goirc-frontend",
+	"GoVersion": "go1.7",
+	"GodepVersion": "v75",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/gorilla/websocket",
+			"Comment": "v1.0.0-20-ga69d25b",
+			"Rev": "a69d25be2fe2923a97c2af6849b2f52426f68fc0"
+		},
+		{
+			"ImportPath": "github.com/nexes/goirc",
+			"Rev": "116914f39d98f52015ec099716ab371cfc89bcd8"
+		}
+	]
+}
