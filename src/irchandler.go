@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/websocket"
 	"github.com/nexes/goirc"
-	"strings"
 )
 
 //our object that makes a connection to our goirc API and the websocket to communicate over
