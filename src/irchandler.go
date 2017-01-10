@@ -10,8 +10,8 @@ import (
 	"github.com/nexes/goirc"
 )
 
-//our object that makes a connection to our goirc API and the websocket to communicate over
-type ircHandler struct {
+//IRCHandler object that makes a connection to our goirc API and the websocket to communicate over
+type IRCHandler struct {
 	irc  goirc.Client
 	conn *websocket.Conn
 }
@@ -36,8 +36,46 @@ type requestData struct {
 	Room    string `json:"channel"`
 }
 
+//NewIRCHandler returns a new IRC handler, used to ineract with the IRC library. Pass is the only optional parameter
+func NewIRCHandler(nick, server, pass string) (*IRCHandler, error) {
+	i := &IRCHandler{}
+	i.irc = goirc.Client{
+		Nick:     nick,
+		Server:   server,
+		Password: pass,
+	}
+
+	err := i.irc.ConnectToServer()
+	if err != nil {
+		return nil, err
+	}
+
+	return i, nil
+}
+
+//CreateWebSocket function to upgrade the GET request to a websocket
+func (i *IRCHandler) CreateWebSocket(res http.ResponseWriter, req *http.Request) error {
+	var upgrader = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
+
+	fmt.Printf("IRCHandler %v\n", i)
+	wsocket, err := upgrader.Upgrade(res, req, nil)
+	if err != nil {
+		fmt.Printf("error with server ws %s", err.Error())
+		return err
+	}
+	i.conn = wsocket
+
+	go i.ircResponses()
+	go i.ircRequest()
+
+	return nil
+}
+
 //this will receive irc data from goirc and send it up through a websocket
-func (i *ircHandler) ircResponses() {
+func (i *IRCHandler) ircResponses() {
 	i.irc.Listen()
 	defer i.irc.CloseConnection("bye goirc")
 	defer i.conn.Close()
@@ -66,7 +104,7 @@ func (i *ircHandler) ircResponses() {
 }
 
 //ircRequest will handle readng from the websocket
-func (i *ircHandler) ircRequest() {
+func (i *IRCHandler) ircRequest() {
 	var requestIRC requestData
 	i.conn.SetReadLimit(1024)
 
@@ -111,55 +149,5 @@ func (i *ircHandler) ircRequest() {
 				i.irc.LeaveChannel(chn, "Bye people")
 			}
 		}
-	}
-}
-
-//handle POST and GET. POST will have the users nick, password and server name, this needs
-//to be called before GET request. GET will upgrade from the HTTP protocol to the ws protocol
-func (i *ircHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	res.Header().Set("Content-Type", "application/json")
-	encdr := json.NewEncoder(res)
-
-	switch req.Method {
-	case http.MethodPost:
-		var info clientInfo
-		dec := json.NewDecoder(req.Body)
-		dec.Decode(&info)
-
-		i.irc = goirc.Client{
-			Nick:     info.Nick,
-			Server:   info.ServerName,
-			Password: info.Pass,
-		}
-
-		err := i.irc.ConnectToServer()
-		if err != nil {
-			fmt.Println(err.Error())
-			encdr.Encode(responseData{response: "Error connectingto IRC", status: 500})
-			return
-		}
-
-		encdr.Encode(responseData{response: "IRC connection open", status: 200})
-
-	case http.MethodGet:
-		var upgrader = websocket.Upgrader{
-			ReadBufferSize:  1024,
-			WriteBufferSize: 1024,
-		}
-
-		conn, err := upgrader.Upgrade(res, req, nil)
-		if err != nil {
-			fmt.Printf("error with server ws %s", err.Error())
-			encdr.Encode(responseData{response: "Error upgrading to ws protocol", status: 500})
-			return
-		}
-		i.conn = conn
-
-		go i.ircResponses()
-		go i.ircRequest()
-		encdr.Encode(responseData{response: "listening", status: 200})
-
-	default:
-		fmt.Println("nope")
 	}
 }
