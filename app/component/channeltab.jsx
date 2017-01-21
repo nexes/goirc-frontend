@@ -24,9 +24,13 @@ export class ChannelTab extends React.Component {
     }
 
     render() {
-        let list = this.props.channels.map((value, index) => {
-            return <li key={index} onClick={this.tabLeftClick} onContextMenu={this.tabRightClick}><a href="#">{value}</a></li>;
-        });
+        let list = [];
+        let index = 0;
+
+        for (let [name, nicks] of this.props.channels) {
+            list.push(<li key={index} onClick={this.tabLeftClick} onContextMenu={this.tabRightClick}><a href="#">{name}</a></li>)
+            index++;
+        }
 
         return (
             <div className="channel-tab">
