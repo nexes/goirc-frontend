@@ -15,8 +15,8 @@ export class App extends React.Component {
                 nick: '',
                 message: ''
             }],
+            channels: new Map(), //[name:string, nicks:array[string]]
             activeChannel: '',
-            channels: [],
             userInput: ''
         };
 
@@ -35,38 +35,29 @@ export class App extends React.Component {
     }
 
     updateChannels(command, name) {
-        let newChannels = this.state.channels.slice();
-        let channel = '';
+        let newChannels = new Map(this.state.channels);
+        let channel = name;
 
         if (command === 'join') {
-            if (!newChannels.includes(name)) {
-                channel = name;
+            if (!newChannels.has(name)) {
+                newChannels.set(name, []);
 
                 this.setState({
-                    channels: newChannels.concat(name),
+                    channels: newChannels,
                     activeChannel: name
                 });
             }
 
-        } else if (command == 'part') {
-            newChannels.forEach((value, index) => {
-                if (value === name || value === '#'+name) {
-                    channel = value;
-                    newChannels.splice(index, 1);
-                    this.setState({
-                        channels: newChannels,
-                        activeChannel: newChannels[newChannels.length - 1] //set active channel to last one added
-                    });
-                }
-            });
-        }
+        } else if (command === 'part') {
+            let newChannels = new Map(this.state.channels);
 
-        //we could handle part messages with the data property
-        this.irc.sendCommand({
-            command: command,
-            data: '',
-            channel: channel
-        });
+            if (newChannels.delete(name)) {
+                this.setState({
+                    channels: newChannels,
+                    activeChannel: '' //update this
+                });
+            }
+        }
     }
 
     updateActiveChannel(channelName) {
@@ -98,19 +89,33 @@ export class App extends React.Component {
                 break;
 
             case 'RPL_CHANNELNAME':
-                let newChannels = this.state.channels.slice();
+                let newChannels = new Map(this.state.channels);
 
-                newChannels.forEach((value, index) => {
-                    if (ircMsg.NewName.includes(value)) {
-                        newChannels.splice(index, 1);
-                        newChannels.push(ircMsg.NewName);
+                for (let [key, val] of newChannels) {
+                    if (ircMsg.NewName.includes(key)) {
+                        newChannels.delete(key);
+                        newChannels.set(ircMsg.NewName, []); //this isn't the best way to do it!
 
                         this.setState({
                             channels: newChannels,
-                            activeChannel: value
+                            activeChannel: val
                         });
                     }
-                });
+                }
+
+                // let newChannels = this.state.channels.slice();
+
+                // newChannels.forEach((value, index) => {
+                //     if (ircMsg.NewName.includes(value)) {
+                //         newChannels.splice(index, 1);
+                //         newChannels.push(ircMsg.NewName);
+
+                //         this.setState({
+                //             channels: newChannels,
+                //             activeChannel: value
+                //         });
+                //     }
+                // });
                 break;
 
             case 'RPL_NICKJOIN':
@@ -147,6 +152,11 @@ export class App extends React.Component {
                 //as of right now only join and part commans are supported
                 if (cmd === 'join' || cmd === 'part') {
                     this.updateChannels(cmd, data);
+                    this.irc.sendCommand({
+                        command: cmd,
+                        data: '',
+                        channel: data
+                    });
                 }
 
             } else {
@@ -157,7 +167,7 @@ export class App extends React.Component {
                     message: data
                 };
 
-                this.setState({ messages: this.state.messages.concat(msg)}); 
+                this.setState({ messages: this.state.messages.concat(msg) });
                 this.irc.sendCommand({
                     command: cmd,
                     data: data,
