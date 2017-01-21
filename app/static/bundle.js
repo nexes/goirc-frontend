@@ -27348,6 +27348,8 @@
 	});
 	exports.App = undefined;
 
+	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	var _react = __webpack_require__(1);
@@ -27384,8 +27386,8 @@
 	                nick: '',
 	                message: ''
 	            }],
+	            channels: new Map(), //[name:string, nicks:array[string]]
 	            activeChannel: '',
-	            channels: [],
 	            userInput: ''
 	        };
 
@@ -27408,39 +27410,28 @@
 	    }, {
 	        key: 'updateChannels',
 	        value: function updateChannels(command, name) {
-	            var _this2 = this;
-
-	            var newChannels = this.state.channels.slice();
-	            var channel = '';
+	            var newChannels = new Map(this.state.channels);
+	            var channel = name;
 
 	            if (command === 'join') {
-	                if (!newChannels.includes(name)) {
-	                    channel = name;
+	                if (!newChannels.has(name)) {
+	                    newChannels.set(name, []);
 
 	                    this.setState({
-	                        channels: newChannels.concat(name),
+	                        channels: newChannels,
 	                        activeChannel: name
 	                    });
 	                }
-	            } else if (command == 'part') {
-	                newChannels.forEach(function (value, index) {
-	                    if (value === name || value === '#' + name) {
-	                        channel = value;
-	                        newChannels.splice(index, 1);
-	                        _this2.setState({
-	                            channels: newChannels,
-	                            activeChannel: newChannels[newChannels.length - 1] //set active channel to last one added
-	                        });
-	                    }
-	                });
-	            }
+	            } else if (command === 'part') {
+	                var _newChannels = new Map(this.state.channels);
 
-	            //we could handle part messages with the data property
-	            this.irc.sendCommand({
-	                command: command,
-	                data: '',
-	                channel: channel
-	            });
+	                if (_newChannels.delete(name)) {
+	                    this.setState({
+	                        channels: _newChannels,
+	                        activeChannel: '' //update this
+	                    });
+	                }
+	            }
 	        }
 	    }, {
 	        key: 'updateActiveChannel',
@@ -27453,65 +27444,99 @@
 	    }, {
 	        key: 'ircMessageUpdate',
 	        value: function ircMessageUpdate(event) {
-	            var _this3 = this;
-
 	            var ircMsg = JSON.parse(event.data);
 	            var msg = {};
 
 	            console.log(ircMsg);
+	            switch (ircMsg.IDName) {
+	                case 'PING':
+	                    this.irc.sendCommand({
+	                        command: 'pong',
+	                        room: '',
+	                        data: ''
+	                    });
+	                    break;
 
-	            (function () {
-	                switch (ircMsg.IDName) {
-	                    case 'PING':
-	                        _this3.irc.sendCommand({
-	                            command: 'pong',
-	                            room: '',
-	                            data: ''
-	                        });
-	                        break;
+	                case 'RPL_MOTD':
+	                    msg.channel = ircMsg.Host;
+	                    msg.nick = '';
+	                    msg.message = ircMsg.MOTD;
 
-	                    case 'RPL_MOTD':
-	                        msg.channel = ircMsg.Host;
-	                        msg.nick = '';
-	                        msg.message = ircMsg.MOTD;
+	                    this.setState({ messages: this.state.messages.concat(msg) });
+	                    break;
 
-	                        _this3.setState({ messages: _this3.state.messages.concat(msg) });
-	                        break;
+	                case 'RPL_CHANNELNAME':
+	                    var newChannels = new Map(this.state.channels);
 
-	                    case 'RPL_CHANNELNAME':
-	                        var newChannels = _this3.state.channels.slice();
+	                    var _iteratorNormalCompletion = true;
+	                    var _didIteratorError = false;
+	                    var _iteratorError = undefined;
 
-	                        newChannels.forEach(function (value, index) {
-	                            if (ircMsg.NewName.includes(value)) {
-	                                newChannels.splice(index, 1);
-	                                newChannels.push(ircMsg.NewName);
+	                    try {
+	                        for (var _iterator = newChannels[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	                            var _step$value = _slicedToArray(_step.value, 2);
 
-	                                _this3.setState({
+	                            var key = _step$value[0];
+	                            var val = _step$value[1];
+
+	                            if (ircMsg.NewName.includes(key)) {
+	                                newChannels.delete(key);
+	                                newChannels.set(ircMsg.NewName, []); //this isn't the best way to do it!
+
+	                                this.setState({
 	                                    channels: newChannels,
-	                                    activeChannel: value
+	                                    activeChannel: val
 	                                });
 	                            }
-	                        });
-	                        break;
+	                        }
 
-	                    case 'RPL_NICKJOIN':
-	                        //TODO: update nick list for the channel given
-	                        break;
+	                        // let newChannels = this.state.channels.slice();
 
-	                    case 'RPL_NICKQUIT':
-	                        //TODO: update nick list for the channel given
-	                        break;
+	                        // newChannels.forEach((value, index) => {
+	                        //     if (ircMsg.NewName.includes(value)) {
+	                        //         newChannels.splice(index, 1);
+	                        //         newChannels.push(ircMsg.NewName);
 
-	                    case 'RPL_PRIVMSG':
-	                        //TODO: make sure messages are shown in the correct room
-	                        msg.channel = ircMsg.Channel;
-	                        msg.nick = ircMsg.Nick;
-	                        msg.message = ircMsg.MSG;
+	                        //         this.setState({
+	                        //             channels: newChannels,
+	                        //             activeChannel: value
+	                        //         });
+	                        //     }
+	                        // });
+	                    } catch (err) {
+	                        _didIteratorError = true;
+	                        _iteratorError = err;
+	                    } finally {
+	                        try {
+	                            if (!_iteratorNormalCompletion && _iterator.return) {
+	                                _iterator.return();
+	                            }
+	                        } finally {
+	                            if (_didIteratorError) {
+	                                throw _iteratorError;
+	                            }
+	                        }
+	                    }
 
-	                        _this3.setState({ messages: _this3.state.messages.concat(msg) });
-	                        break;
-	                }
-	            })();
+	                    break;
+
+	                case 'RPL_NICKJOIN':
+	                    //TODO: update nick list for the channel given
+	                    break;
+
+	                case 'RPL_NICKQUIT':
+	                    //TODO: update nick list for the channel given
+	                    break;
+
+	                case 'RPL_PRIVMSG':
+	                    //TODO: make sure messages are shown in the correct room
+	                    msg.channel = ircMsg.Channel;
+	                    msg.nick = ircMsg.Nick;
+	                    msg.message = ircMsg.MSG;
+
+	                    this.setState({ messages: this.state.messages.concat(msg) });
+	                    break;
+	            }
 	        }
 	    }, {
 	        key: 'sendUserInput',
@@ -27529,6 +27554,11 @@
 	                    //as of right now only join and part commans are supported
 	                    if (cmd === 'join' || cmd === 'part') {
 	                        this.updateChannels(cmd, data);
+	                        this.irc.sendCommand({
+	                            command: cmd,
+	                            data: '',
+	                            channel: data
+	                        });
 	                    }
 	                } else {
 	                    //need to get the active channel from channeltab element
@@ -27574,6 +27604,8 @@
 	    value: true
 	});
 	exports.ChannelTab = undefined;
+
+	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -27621,19 +27653,49 @@
 	    }, {
 	        key: 'render',
 	        value: function render() {
-	            var _this2 = this;
+	            var list = [];
+	            var index = 0;
 
-	            var list = this.props.channels.map(function (value, index) {
-	                return _react2.default.createElement(
-	                    'li',
-	                    { key: index, onClick: _this2.tabLeftClick, onContextMenu: _this2.tabRightClick },
-	                    _react2.default.createElement(
-	                        'a',
-	                        { href: '#' },
-	                        value
-	                    )
-	                );
-	            });
+	            var _iteratorNormalCompletion = true;
+	            var _didIteratorError = false;
+	            var _iteratorError = undefined;
+
+	            try {
+	                for (var _iterator = this.props.channels[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	                    var _step$value = _slicedToArray(_step.value, 2);
+
+	                    var name = _step$value[0];
+	                    var nicks = _step$value[1];
+
+	                    list.push(_react2.default.createElement(
+	                        'li',
+	                        { key: index, onClick: this.tabLeftClick, onContextMenu: this.tabRightClick },
+	                        _react2.default.createElement(
+	                            'a',
+	                            { href: '#' },
+	                            name
+	                        )
+	                    ));
+	                    index++;
+	                }
+
+	                // let list = this.pops.channels.map((value, index) => {
+	                //     return <li key={index} onClick={this.tabLeftClick} onContextMenu={this.tabRightClick}><a href="#">{value}</a></li>;
+	                // });
+	            } catch (err) {
+	                _didIteratorError = true;
+	                _iteratorError = err;
+	            } finally {
+	                try {
+	                    if (!_iteratorNormalCompletion && _iterator.return) {
+	                        _iterator.return();
+	                    }
+	                } finally {
+	                    if (_didIteratorError) {
+	                        throw _iteratorError;
+	                    }
+	                }
+	            }
 
 	            return _react2.default.createElement(
 	                'div',
@@ -28015,7 +28077,7 @@
 	        key: 'openConnection',
 	        value: function openConnection() {
 	            if (this.ws === undefined) {
-	                this.ws = new WebSocket('wss://' + window.location.host + '/api/irc/connect');
+	                this.ws = new WebSocket('ws://' + window.location.host + '/api/irc/connect');
 	            }
 	            this.ws.onopen = this.socketOpen;
 	        }
