@@ -27489,20 +27489,6 @@
 	                                });
 	                            }
 	                        }
-
-	                        // let newChannels = this.state.channels.slice();
-
-	                        // newChannels.forEach((value, index) => {
-	                        //     if (ircMsg.NewName.includes(value)) {
-	                        //         newChannels.splice(index, 1);
-	                        //         newChannels.push(ircMsg.NewName);
-
-	                        //         this.setState({
-	                        //             channels: newChannels,
-	                        //             activeChannel: value
-	                        //         });
-	                        //     }
-	                        // });
 	                    } catch (err) {
 	                        _didIteratorError = true;
 	                        _iteratorError = err;
@@ -27520,12 +27506,52 @@
 
 	                    break;
 
+	                case 'RPL_NAMEPLY':
+	                    //capture the nicklist of the channel
+	                    var channels = new Map(this.state.channels);
+
+	                    if (channels.has(ircMsg.Channel)) {
+	                        var nicks = channels.get(ircMsg.Channel);
+	                        var updated_nick = nicks.concat(ircMsg.Nicks);
+
+	                        channels.set(ircMsg.Channel, updated_nick);
+
+	                        this.setState({
+	                            channels: channels
+	                        });
+	                    }
+	                    break;
+
 	                case 'RPL_NICKJOIN':
-	                    //TODO: update nick list for the channel given
+	                    console.log('nick join ' + ircMsg.Nick);
+	                    var channels_join = new Map(this.state.channels);
+
+	                    if (channels_join.has(ircMsg.Channel)) {
+	                        var _nicks = channels_join.get(ircMsg.Channel);
+
+	                        nick.push(ircMsg.Nick);
+	                        channels_join.set(ircMsg.Channel, _nicks);
+
+	                        this.setState({
+	                            channels: channels_join
+	                        });
+	                    }
 	                    break;
 
 	                case 'RPL_NICKQUIT':
-	                    //TODO: update nick list for the channel given
+	                    console.log('nick quit: ' + ircMsg.Nick);
+	                    var channels_quit = new Map(this.state.channels);
+
+	                    if (channels_quit.has(ircMsg.Channel)) {
+	                        var _nicks2 = channels_quit.get(ircMsg.Channel);
+
+	                        _nicks2.splice(_nicks2.indexOf(ircMsg.Nick), 1);
+	                        channels_quit.set(ircMsg.Channel, _nicks2);
+
+	                        this.setState({
+	                            channels: channels_quit
+	                        });
+	                    }
 	                    break;
 
 	                case 'RPL_PRIVMSG':
@@ -27580,13 +27606,15 @@
 	    }, {
 	        key: 'render',
 	        value: function render() {
+	            var nickList = this.state.channels.get(this.state.activeChannel);
+
 	            return _react2.default.createElement(
 	                'div',
 	                null,
 	                _react2.default.createElement(_channeltab.ChannelTab, { channels: this.state.channels, updateChannel: this.updateActiveChannel }),
 	                _react2.default.createElement(_chatoutput.ChatOutput, { messages: this.state.messages }),
 	                _react2.default.createElement(_chatinput.ChatInput, { inputData: this.state.userInput, inputSubmit: this.sendUserInput, activeChannel: this.state.activeChannel }),
-	                _react2.default.createElement(_nicklist.NickList, null)
+	                _react2.default.createElement(_nicklist.NickList, { nicks: nickList })
 	            );
 	        }
 	    }]);
@@ -27678,10 +27706,6 @@
 	                    ));
 	                    index++;
 	                }
-
-	                // let list = this.pops.channels.map((value, index) => {
-	                //     return <li key={index} onClick={this.tabLeftClick} onContextMenu={this.tabRightClick}><a href="#">{value}</a></li>;
-	                // });
 	            } catch (err) {
 	                _didIteratorError = true;
 	                _iteratorError = err;
@@ -27941,7 +27965,7 @@
 /* 240 */
 /***/ function(module, exports, __webpack_require__) {
 
-	'use strict';
+	"use strict";
 
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
@@ -27972,9 +27996,24 @@
 	    }
 
 	    _createClass(NickList, [{
-	        key: 'render',
+	        key: "shouldComponentUpdate",
+	        value: function shouldComponentUpdate(nextprops, nextstate) {
+	            return nextprops.nicks !== this.props.nicks;
+	        }
+	    }, {
+	        key: "render",
 	        value: function render() {
-	            return null;
+	            var sortedList = [];
+
+	            if (this.props.nicks) {
+	                sortedList = this.props.nicks.sort();
+	            }
+
+	            return _react2.default.createElement(
+	                "ul",
+	                { className: "nick-list" },
+	                sortedList
+	            );
 	        }
 	    }]);
 

@@ -68,7 +68,7 @@ html body {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    width: 100%;
+    width: 90%;
     top: 40px;
     bottom: 60px;
 }
@@ -125,3 +125,18 @@ html body {
     right: 0px;
 }
 /*Chat Input End*/
+
+/*Nick List Begin*/
+.nick-list {
+    position: absolute;
+    right: 0px;
+    top: 42px;
+    bottom: 42px;
+    width: 10%;
+    overflow-y: scroll;
+    color: black;
+    padding: 0px;
+    border-left: black;
+    border-left-style: inset;
+}
+/*Nick List End*/

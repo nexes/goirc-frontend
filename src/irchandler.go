@@ -60,7 +60,6 @@ func (i *IRCHandler) CreateWebSocket(res http.ResponseWriter, req *http.Request)
 		WriteBufferSize: 1024,
 	}
 
-	fmt.Printf("IRCHandler %v\n", i)
 	wsocket, err := upgrader.Upgrade(res, req, nil)
 	if err != nil {
 		fmt.Printf("error with server ws %s", err.Error())

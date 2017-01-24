@@ -102,28 +102,54 @@ export class App extends React.Component {
                         });
                     }
                 }
+                break;
 
-                // let newChannels = this.state.channels.slice();
+            case 'RPL_NAMEPLY':
+                //capture the nicklist of the channel
+                let channels = new Map(this.state.channels);
 
-                // newChannels.forEach((value, index) => {
-                //     if (ircMsg.NewName.includes(value)) {
-                //         newChannels.splice(index, 1);
-                //         newChannels.push(ircMsg.NewName);
+                if (channels.has(ircMsg.Channel)) {
+                    let nicks = channels.get(ircMsg.Channel);
+                    let updated_nick = nicks.concat(ircMsg.Nicks);
 
-                //         this.setState({
-                //             channels: newChannels,
-                //             activeChannel: value
-                //         });
-                //     }
-                // });
+                    channels.set(ircMsg.Channel, updated_nick);
+
+                    this.setState({
+                        channels: channels
+                    });
+                }
                 break;
 
             case 'RPL_NICKJOIN':
-                //TODO: update nick list for the channel given
+                let channels_join = new Map(this.state.channels);
+
+                if (channels_join.has(ircMsg.Channel)) {
+                    let nicks = channels_join.get(ircMsg.Channel);
+
+                    nick.push(ircMsg.Nick);
+                    channels_join.set(ircMsg.Channel, nicks);
+
+                    console.log('nick join ' + ircMsg.Nick);
+                    this.setState({
+                        channels: channels_join
+                    });
+                }
                 break;
 
             case 'RPL_NICKQUIT':
-                //TODO: update nick list for the channel given
+                let channels_quit = new Map(this.state.channels);
+
+                if (channels_quit.has(ircMsg.Channel)) {
+                    let nicks = channels_quit.get(ircMsg.Channel);
+
+                    nicks.splice(nicks.indexOf(ircMsg.Nick), 1);
+                    channels_quit.set(ircMsg.Channel, nicks);
+
+                    console.log('nick quit: ' + ircMsg.Nick);
+                    this.setState({
+                        channels: channels_quit
+                    });
+                }
                 break;
 
 
@@ -178,12 +204,14 @@ export class App extends React.Component {
     }
 
     render() {
+        let nickList = this.state.channels.get(this.state.activeChannel);
+
         return (
             <div>
                 <ChannelTab channels={this.state.channels} updateChannel={this.updateActiveChannel} />
                 <ChatOutput messages={this.state.messages} />
                 <ChatInput inputData={this.state.userInput} inputSubmit={this.sendUserInput} activeChannel={this.state.activeChannel} />
-                <NickList />
+                <NickList nicks={nickList} />
             </div>
         );
     }
