@@ -98,7 +98,7 @@ export class App extends React.Component {
 
                         this.setState({
                             channels: newChannels,
-                            activeChannel: val
+                            activeChannel: ircMsg.NewName
                         });
                     }
                 }
@@ -106,16 +106,15 @@ export class App extends React.Component {
 
             case 'RPL_NAMEPLY':
                 //capture the nicklist of the channel
-                let channels = new Map(this.state.channels);
+                let channels_nicks = new Map(this.state.channels);
 
-                if (channels.has(ircMsg.Channel)) {
-                    let nicks = channels.get(ircMsg.Channel);
-                    let updated_nick = nicks.concat(ircMsg.Nicks);
+                if (channels_nicks.has(ircMsg.Channel)) {
+                    let nicks = channels_nicks.get(ircMsg.Channel);
+                    let newNicks = ircMsg.Nicks.split(' ');
 
-                    channels.set(ircMsg.Channel, updated_nick);
-
+                    channels_nicks.set(ircMsg.Channel, nicks.concat(newNicks));
                     this.setState({
-                        channels: channels
+                        channels: channels_nicks
                     });
                 }
                 break;
@@ -129,7 +128,6 @@ export class App extends React.Component {
                     nick.push(ircMsg.Nick);
                     channels_join.set(ircMsg.Channel, nicks);
 
-                    console.log('nick join ' + ircMsg.Nick);
                     this.setState({
                         channels: channels_join
                     });
@@ -137,15 +135,15 @@ export class App extends React.Component {
                 break;
 
             case 'RPL_NICKQUIT':
+                //IRC servers don't mention the channel name with QUIT, so I'll just check the active channel for now
+                //this needs to be fixed.
                 let channels_quit = new Map(this.state.channels);
+                let nicks = channels_quit.get(this.state.activeChannel);
 
-                if (channels_quit.has(ircMsg.Channel)) {
-                    let nicks = channels_quit.get(ircMsg.Channel);
-
+                if (nicks.indexOf(ircMsg.Nick) !== -1) {
                     nicks.splice(nicks.indexOf(ircMsg.Nick), 1);
                     channels_quit.set(ircMsg.Channel, nicks);
 
-                    console.log('nick quit: ' + ircMsg.Nick);
                     this.setState({
                         channels: channels_quit
                     });

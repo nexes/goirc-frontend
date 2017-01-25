@@ -27485,7 +27485,7 @@
 
 	                                this.setState({
 	                                    channels: newChannels,
-	                                    activeChannel: val
+	                                    activeChannel: ircMsg.NewName
 	                                });
 	                            }
 	                        }
@@ -27508,29 +27508,27 @@
 
 	                case 'RPL_NAMEPLY':
 	                    //capture the nicklist of the channel
-	                    var channels = new Map(this.state.channels);
+	                    var channels_nicks = new Map(this.state.channels);
 
-	                    if (channels.has(ircMsg.Channel)) {
-	                        var nicks = channels.get(ircMsg.Channel);
-	                        var updated_nick = nicks.concat(ircMsg.Nicks);
+	                    if (channels_nicks.has(ircMsg.Channel)) {
+	                        var _nicks = channels_nicks.get(ircMsg.Channel);
+	                        var newNicks = ircMsg.Nicks.split(' ');
 
-	                        channels.set(ircMsg.Channel, updated_nick);
-
+	                        channels_nicks.set(ircMsg.Channel, _nicks.concat(newNicks));
 	                        this.setState({
-	                            channels: channels
+	                            channels: channels_nicks
 	                        });
 	                    }
 	                    break;
 
 	                case 'RPL_NICKJOIN':
-	                    console.log('nick join ' + ircMsg.Nick);
 	                    var channels_join = new Map(this.state.channels);
 
 	                    if (channels_join.has(ircMsg.Channel)) {
-	                        var _nicks = channels_join.get(ircMsg.Channel);
+	                        var _nicks2 = channels_join.get(ircMsg.Channel);
 
 	                        nick.push(ircMsg.Nick);
-	                        channels_join.set(ircMsg.Channel, _nicks);
+	                        channels_join.set(ircMsg.Channel, _nicks2);
 
 	                        this.setState({
 	                            channels: channels_join
@@ -27539,14 +27537,14 @@
 	                    break;
 
 	                case 'RPL_NICKQUIT':
-	                    console.log('nick quit: ' + ircMsg.Nick);
+	                    //IRC servers don't mention the channel name with QUIT, so I'll just check the active channel for now
+	                    //this needs to be fixed.
 	                    var channels_quit = new Map(this.state.channels);
+	                    var nicks = channels_quit.get(this.state.activeChannel);
 
-	                    if (channels_quit.has(ircMsg.Channel)) {
-	                        var _nicks2 = channels_quit.get(ircMsg.Channel);
-
-	                        _nicks2.splice(_nicks2.indexOf(ircMsg.Nick), 1);
-	                        channels_quit.set(ircMsg.Channel, _nicks2);
+	                    if (nicks.indexOf(ircMsg.Nick) !== -1) {
+	                        nicks.splice(nicks.indexOf(ircMsg.Nick), 1);
+	                        channels_quit.set(ircMsg.Channel, nicks);
 
 	                        this.setState({
 	                            channels: channels_quit
@@ -28003,16 +28001,22 @@
 	    }, {
 	        key: "render",
 	        value: function render() {
-	            var sortedList = [];
+	            var nickList = void 0;
 
 	            if (this.props.nicks) {
-	                sortedList = this.props.nicks.sort();
+	                nickList = this.props.nicks.map(function (val) {
+	                    return _react2.default.createElement(
+	                        "li",
+	                        null,
+	                        val
+	                    );
+	                });
 	            }
 
 	            return _react2.default.createElement(
 	                "ul",
 	                { className: "nick-list" },
-	                sortedList
+	                nickList
 	            );
 	        }
 	    }]);
