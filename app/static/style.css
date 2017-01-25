@@ -128,11 +128,11 @@ html body {
 
 /*Nick List Begin*/
 .nick-list {
+    list-style: none;
     position: absolute;
     right: 0px;
     top: 42px;
     bottom: 42px;
-    width: 10%;
     overflow-y: scroll;
     color: black;
     padding: 0px;
