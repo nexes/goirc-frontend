@@ -10,15 +10,18 @@ export class NickList extends React.Component {
     }
 
     render() {
-        let sortedList = [];
+        let nickList;
         
         if (this.props.nicks) {
-            sortedList = this.props.nicks.sort();
+            let sortedList = this.props.nicks.sort();
+            nickList = sortedList.map((val) => {
+                return <li>{val}</li>
+            });
         }
         
         return (
             <ul className="nick-list">
-                {sortedList}
+                {nickList}
             </ul>
         );
     }
