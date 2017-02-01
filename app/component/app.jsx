@@ -150,7 +150,6 @@ export class App extends React.Component {
                 }
                 break;
 
-
             case 'RPL_PRIVMSG':
                 //TODO: make sure messages are shown in the correct room
                 msg.channel = ircMsg.Channel;
