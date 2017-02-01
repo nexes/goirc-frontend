@@ -68,7 +68,7 @@ html body {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    width: 90%;
+    right: 120px;
     top: 40px;
     bottom: 60px;
 }
