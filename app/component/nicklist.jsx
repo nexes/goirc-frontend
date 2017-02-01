@@ -14,8 +14,8 @@ export class NickList extends React.Component {
         
         if (this.props.nicks) {
             let sortedList = this.props.nicks.sort();
-            nickList = sortedList.map((val) => {
-                return <li>{val}</li>
+            nickList = sortedList.map((val, index) => {
+                return <li key={{index}}>{val}</li>
             });
         }
         
