@@ -5,9 +5,13 @@
     "name": "Joe Berria",
     "email": "joeberria@gmail.com"
   },
+  "scripts": {
+    "build": "webpack"
+  },
   "private": true,
   "description": "Front End application using the goIRC package",
   "devDependencies": {
+    "webpack": "2.2.0",
     "babel-loader": "^6.2.5",
     "babel-preset-es2015": "^6.13.2",
     "babel-preset-react": "^6.11.1",
