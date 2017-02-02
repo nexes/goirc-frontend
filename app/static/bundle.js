@@ -12638,7 +12638,6 @@ var App = exports.App = function (_React$Component) {
 
                 case 'RPL_NICKJOIN':
                     var channels_join = new Map(this.state.channels);
-                    console.log('JOIN: channel list: ' + channels_join + ', ircMsg.channel: ' + ircMsg.Channel);
 
                     if (channels_join.has(ircMsg.Channel)) {
                         var _nicks2 = channels_join.get(ircMsg.Channel);
@@ -12655,7 +12654,6 @@ var App = exports.App = function (_React$Component) {
                 case 'RPL_NICKQUIT':
                     //IRC servers don't mention the channel name with QUIT, so I'll just check the active channel for now
                     //this needs to be fixed.
-                    console.log('!!!!!nick quit: channel found ' + ircMsg.Channel + ', nick ' + ircMsg.Nick);
                     var channels_quit = new Map(this.state.channels);
                     var nicks = channels_quit.get(this.state.activeChannel);
 
@@ -13032,7 +13030,7 @@ var IRC = exports.IRC = function () {
         key: 'openConnection',
         value: function openConnection() {
             if (this.ws === undefined) {
-                this.ws = new WebSocket('ws://' + window.location.host + '/api/irc/connect');
+                this.ws = new WebSocket('wss://' + window.location.host + '/api/irc/connect');
             }
             this.ws.onopen = this.socketOpen;
         }
