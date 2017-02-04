@@ -24,6 +24,9 @@ export class ChatInput extends React.Component {
     keyPressEvent(e) {
         if (e.key === 'Enter') {
             this.submitUserInput();
+
+        } else if (e.key === 'Tab') {
+            //TODO: autocomplete user nick names
         }
     }
 

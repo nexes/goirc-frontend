@@ -13030,7 +13030,7 @@ var IRC = exports.IRC = function () {
         key: 'openConnection',
         value: function openConnection() {
             if (this.ws === undefined) {
-                this.ws = new WebSocket('wss://' + window.location.host + '/api/irc/connect');
+                this.ws = new WebSocket('ws://' + window.location.host + '/api/irc/connect');
             }
             this.ws.onopen = this.socketOpen;
         }
@@ -13394,6 +13394,8 @@ var ChatInput = exports.ChatInput = function (_React$Component) {
         value: function keyPressEvent(e) {
             if (e.key === 'Enter') {
                 this.submitUserInput();
+            } else if (e.key === 'Tab') {
+                //TODO: autocomplete user nick names
             }
         }
     }, {
