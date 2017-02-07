@@ -20,7 +20,8 @@ export class ChannelTab extends React.Component {
     }
 
     shouldComponentUpdate(nextprops, nextstate) {
-        return this.props.channels !== nextprops.channels;
+        return !(this.props.channels === nextprops.channels &&
+                 this.props.activeChannel === nextprops.activeChannel);
     }
 
     render() {
@@ -28,12 +29,12 @@ export class ChannelTab extends React.Component {
         let index = 0;
 
         for (let [name, nicks] of this.props.channels) {
-            list.push(<li key={index}
-                          onClick={this.tabLeftClick}
-                          onContextMenu={this.tabRightClick}>
-                        <a href="#">{name}</a>
-                    </li>)
-            index++;
+            list.push(<li key={index++}
+                onClick={this.tabLeftClick}
+                onContextMenu={this.tabRightClick}
+                className={(name === this.props.activeChannel ? 'active' : 'none')}>
+                <a href="#">{name}</a>
+            </li>)
         }
 
         return (

@@ -209,7 +209,7 @@ export class App extends React.Component {
 
         return (
             <div>
-                <ChannelTab channels={this.state.channels} updateChannel={this.updateActiveChannel} />
+                <ChannelTab channels={this.state.channels} activeChannel={this.state.activeChannel} updateChannel={this.updateActiveChannel} />
                 <ChatOutput messages={this.state.messages} activeChannel={this.state.activeChannel}/>
                 <ChatInput inputData={this.state.userInput} inputSubmit={this.sendUserInput} activeChannel={this.state.activeChannel} />
                 <NickList nicks={nickList} />

@@ -12728,7 +12728,7 @@ var App = exports.App = function (_React$Component) {
             return _react2.default.createElement(
                 'div',
                 null,
-                _react2.default.createElement(_channeltab.ChannelTab, { channels: this.state.channels, updateChannel: this.updateActiveChannel }),
+                _react2.default.createElement(_channeltab.ChannelTab, { channels: this.state.channels, activeChannel: this.state.activeChannel, updateChannel: this.updateActiveChannel }),
                 _react2.default.createElement(_chatoutput.ChatOutput, { messages: this.state.messages, activeChannel: this.state.activeChannel }),
                 _react2.default.createElement(_chatinput.ChatInput, { inputData: this.state.userInput, inputSubmit: this.sendUserInput, activeChannel: this.state.activeChannel }),
                 _react2.default.createElement(_nicklist.NickList, { nicks: nickList })
@@ -13275,7 +13275,7 @@ var ChannelTab = exports.ChannelTab = function (_React$Component) {
     }, {
         key: 'shouldComponentUpdate',
         value: function shouldComponentUpdate(nextprops, nextstate) {
-            return this.props.channels !== nextprops.channels;
+            return !(this.props.channels === nextprops.channels && this.props.activeChannel === nextprops.activeChannel);
         }
     }, {
         key: 'render',
@@ -13295,16 +13295,16 @@ var ChannelTab = exports.ChannelTab = function (_React$Component) {
 
                     list.push(_react2.default.createElement(
                         'li',
-                        { key: index,
+                        { key: index++,
                             onClick: this.tabLeftClick,
-                            onContextMenu: this.tabRightClick },
+                            onContextMenu: this.tabRightClick,
+                            className: name === this.props.activeChannel ? 'active' : 'none' },
                         _react2.default.createElement(
                             'a',
                             { href: '#' },
                             name
                         )
                     ));
-                    index++;
                 }
             } catch (err) {
                 _didIteratorError = true;
