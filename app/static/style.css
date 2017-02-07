@@ -71,6 +71,7 @@ html body {
     left: 0px;
     top: 40px;
     bottom: 60px;
+    right: 120px;
 }
 
 .chat-output .msg {
@@ -135,6 +136,7 @@ html body {
     bottom: 42px;
     overflow-y: scroll;
     color: black;
+    background: #dedede;
     padding: 0px;
     border-left: black;
     border-left-style: inset;
