@@ -36,7 +36,7 @@ export class App extends React.Component {
 
     updateChannels(command, name) {
         let newChannels = new Map(this.state.channels);
-        let channel = name;
+        // let channel = name;
 
         if (command === 'join') {
             if (!newChannels.has(name)) {
@@ -70,7 +70,7 @@ export class App extends React.Component {
         let ircMsg = JSON.parse(event.data);
         let msg = {};
 
-        console.log(ircMsg);
+        // console.log(ircMsg);
         switch (ircMsg.IDName) {
             case 'PING':
                 this.irc.sendCommand({
@@ -90,9 +90,12 @@ export class App extends React.Component {
 
             case 'RPL_CHANNELNAME':
                 let newChannels = new Map(this.state.channels);
+                console.log(`CHANNELNAME: ${ircMsg.NewName}`);
 
                 for (let [key, val] of newChannels) {
+                    console.log(`size ${newChannels.size}`);
                     if (ircMsg.NewName.includes(key)) {
+                        console.log(`found a channel to update ${key}`);
                         newChannels.delete(key);
                         newChannels.set(ircMsg.NewName, []); //this isn't the best way to do it!
 
@@ -100,6 +103,7 @@ export class App extends React.Component {
                             channels: newChannels,
                             activeChannel: ircMsg.NewName
                         });
+                        break;
                     }
                 }
                 break;
@@ -206,7 +210,7 @@ export class App extends React.Component {
         return (
             <div>
                 <ChannelTab channels={this.state.channels} updateChannel={this.updateActiveChannel} />
-                <ChatOutput messages={this.state.messages} />
+                <ChatOutput messages={this.state.messages} activeChannel={this.state.activeChannel}/>
                 <ChatInput inputData={this.state.userInput} inputSubmit={this.sendUserInput} activeChannel={this.state.activeChannel} />
                 <NickList nicks={nickList} />
             </div>

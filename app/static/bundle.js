@@ -12527,7 +12527,7 @@ var App = exports.App = function (_React$Component) {
         key: 'updateChannels',
         value: function updateChannels(command, name) {
             var newChannels = new Map(this.state.channels);
-            var channel = name;
+            // let channel = name;
 
             if (command === 'join') {
                 if (!newChannels.has(name)) {
@@ -12563,7 +12563,7 @@ var App = exports.App = function (_React$Component) {
             var ircMsg = JSON.parse(event.data);
             var msg = {};
 
-            console.log(ircMsg);
+            // console.log(ircMsg);
             switch (ircMsg.IDName) {
                 case 'PING':
                     this.irc.sendCommand({
@@ -12583,6 +12583,7 @@ var App = exports.App = function (_React$Component) {
 
                 case 'RPL_CHANNELNAME':
                     var newChannels = new Map(this.state.channels);
+                    console.log('CHANNELNAME: ' + ircMsg.NewName);
 
                     var _iteratorNormalCompletion = true;
                     var _didIteratorError = false;
@@ -12594,7 +12595,9 @@ var App = exports.App = function (_React$Component) {
                                 key = _step$value[0],
                                 val = _step$value[1];
 
+                            console.log('size ' + newChannels.size);
                             if (ircMsg.NewName.includes(key)) {
+                                console.log('found a channel to update ' + key);
                                 newChannels.delete(key);
                                 newChannels.set(ircMsg.NewName, []); //this isn't the best way to do it!
 
@@ -12602,6 +12605,7 @@ var App = exports.App = function (_React$Component) {
                                     channels: newChannels,
                                     activeChannel: ircMsg.NewName
                                 });
+                                break;
                             }
                         }
                     } catch (err) {
@@ -12725,7 +12729,7 @@ var App = exports.App = function (_React$Component) {
                 'div',
                 null,
                 _react2.default.createElement(_channeltab.ChannelTab, { channels: this.state.channels, updateChannel: this.updateActiveChannel }),
-                _react2.default.createElement(_chatoutput.ChatOutput, { messages: this.state.messages }),
+                _react2.default.createElement(_chatoutput.ChatOutput, { messages: this.state.messages, activeChannel: this.state.activeChannel }),
                 _react2.default.createElement(_chatinput.ChatInput, { inputData: this.state.userInput, inputSubmit: this.sendUserInput, activeChannel: this.state.activeChannel }),
                 _react2.default.createElement(_nicklist.NickList, { nicks: nickList })
             );
@@ -13291,7 +13295,9 @@ var ChannelTab = exports.ChannelTab = function (_React$Component) {
 
                     list.push(_react2.default.createElement(
                         'li',
-                        { key: index, onClick: this.tabLeftClick, onContextMenu: this.tabRightClick },
+                        { key: index,
+                            onClick: this.tabLeftClick,
+                            onContextMenu: this.tabRightClick },
                         _react2.default.createElement(
                             'a',
                             { href: '#' },
@@ -13479,12 +13485,16 @@ var ChatOutput = exports.ChatOutput = function (_React$Component) {
     _createClass(ChatOutput, [{
         key: "render",
         value: function render() {
+            var channel = this.props.activeChannel;
+
             var messages = this.props.messages.map(function (item, index) {
-                return _react2.default.createElement(
-                    "div",
-                    { className: "msg", key: index },
-                    _react2.default.createElement(ChatMessage, { nick: item.nick, channel: item.channel, message: item.message })
-                );
+                if (item.channel === channel) {
+                    return _react2.default.createElement(
+                        "div",
+                        { className: "msg", key: index },
+                        _react2.default.createElement(ChatMessage, { nick: item.nick, channel: item.channel, message: item.message })
+                    );
+                }
             });
 
             return _react2.default.createElement(

@@ -6,12 +6,16 @@ export class ChatOutput extends React.Component {
     }
 
     render() {
+        let channel = this.props.activeChannel;
+
         let messages = this.props.messages.map((item, index) => {
-            return (
-                <div className="msg" key={index}>
-                    <ChatMessage nick={item.nick} channel={item.channel} message={item.message} />
-                </div>
-            );
+            if (item.channel === channel) {
+                return (
+                    <div className="msg" key={index}>
+                        <ChatMessage nick={item.nick} channel={item.channel} message={item.message} />
+                    </div>
+                );
+            }
         });
 
         return (

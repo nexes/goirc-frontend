@@ -28,7 +28,11 @@ export class ChannelTab extends React.Component {
         let index = 0;
 
         for (let [name, nicks] of this.props.channels) {
-            list.push(<li key={index} onClick={this.tabLeftClick} onContextMenu={this.tabRightClick}><a href="#">{name}</a></li>)
+            list.push(<li key={index}
+                          onClick={this.tabLeftClick}
+                          onContextMenu={this.tabRightClick}>
+                        <a href="#">{name}</a>
+                    </li>)
             index++;
         }
 
