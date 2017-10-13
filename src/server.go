@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	// "github.com/nexes/goirc"
 )
 
 var (
@@ -20,7 +21,7 @@ func ircHandleFunc(res http.ResponseWriter, req *http.Request) {
 
 	switch req.Method {
 	case http.MethodPost:
-		var info clientInfo
+		var info ClientInfo
 
 		dec := json.NewDecoder(req.Body)
 		dec.Decode(&info)
@@ -28,25 +29,23 @@ func ircHandleFunc(res http.ResponseWriter, req *http.Request) {
 		nick = info.Nick
 		servername = info.ServerName
 		pass = info.Pass
-
-		encdr.Encode(responseData{response: "IRC connection open", status: 200})
+		encdr.Encode(ResponseData{response: "IRC connection open", status: 200})
 
 	case http.MethodGet:
 		client, err := NewIRCHandler(nick, servername, pass)
 		if err != nil {
 			fmt.Printf("error from NewIRCHandler %s\n", err.Error())
-			encdr.Encode(responseData{response: "Error creating IRC handler", status: 500})
+			encdr.Encode(ResponseData{response: "Error creating IRC handler", status: 500})
 			return
 		}
 
 		sockErr := client.CreateWebSocket(res, req)
 		if sockErr != nil {
 			fmt.Printf("error with CreateWebSocket %s", err.Error())
-			encdr.Encode(responseData{response: "Error upgrading to ws protocol", status: 500})
+			encdr.Encode(ResponseData{response: "Error upgrading to ws protocol", status: 500})
 			return
 		}
-
-		encdr.Encode(responseData{response: "listening", status: 200})
+		encdr.Encode(ResponseData{response: "listening", status: 200})
 
 	default:
 		fmt.Println("nope")

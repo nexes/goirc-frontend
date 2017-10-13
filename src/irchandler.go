@@ -16,15 +16,15 @@ type IRCHandler struct {
 	conn *websocket.Conn
 }
 
-//holds client data for IRC, received from the POST request
-type clientInfo struct {
+//ClientInfo holds client data for IRC, received from the POST request
+type ClientInfo struct {
 	ServerName string `json:"server"`
 	Nick       string `json:"nick"`
 	Pass       string `json:"pass,omitempty"`
 }
 
-//json struct that will be sent in responses to the client
-type responseData struct {
+//ResponseData json struct that will be sent in responses to the client
+type ResponseData struct {
 	response string
 	status   int
 }

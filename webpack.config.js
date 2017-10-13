@@ -12,9 +12,9 @@ module.exports = {
                 test: /\.jsx?$/,
                 exclude: [ /node_modules/ ],
                 include: [ path.join(__dirname, 'app') ],
-                loader: "babel-loader",
+                loader: 'babel-loader',
                 options: {
-                    presets: ["es2015", "react"]
+                    presets: ['es2015', 'react']
                 }
             }
         ]
