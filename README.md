@@ -14,3 +14,4 @@ https://goirc.herokuapp.com
 * Handle SSL connection options
 * Display the nick list
 * Complete basic IRC features 
+* better UI layout
